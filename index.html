@@ -650,7 +650,7 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
       <div class="settings-card" style="margin-bottom:20px">
         <h3>&#128293; Firebase Firestore</h3>
         <div style="font-size:13px;color:var(--muted);margin-bottom:10px">Project: <strong>juodziaigear</strong></div>
-        <button class="btn btn-ghost btn-sm" onclick="connectAndLoad()">&#8635; Reload data from Firebase</button>
+        <button class="btn btn-ghost btn-sm" onclick="connectAndLoad({force:true})">&#8635; Reload data from Firebase</button>
       </div>
       <div class="settings-grid">
         <div class="settings-card">
@@ -872,7 +872,11 @@ function saveLocal(){
   localStorage.setItem('sg_lends',JSON.stringify(lends));
   localStorage.setItem('sg_trips',JSON.stringify(trips));
   localStorage.setItem('sg_lookups',JSON.stringify(lookups));
+  localStorage.setItem('sg_fetched_at',Date.now().toString());
 }
+function invalidateCache(){localStorage.removeItem('sg_fetched_at');}
+function cacheAgeMs(){return Date.now()-(parseInt(localStorage.getItem('sg_fetched_at')||'0'));}
+const CACHE_TTL_MS=10*60*1000; // 10 minutes
 
 // ════ API — Firebase Firestore ════
 firebase.initializeApp({
@@ -1008,8 +1012,19 @@ function normalizeTrip(t){
   ['start_date','end_date'].forEach(f=>{if(t[f]) t[f]=fmtDate(t[f]);});
   return t;
 }
-async function connectAndLoad(){
-  setConnStatus('loading','Connecting to Firebase...');
+async function connectAndLoad({force=false}={}){
+  // Serve from cache immediately so UI is instant
+  loadLocal();
+  updateBadges(); renderAll(); renderLookupUI();
+
+  // Skip Firebase if cache is fresh and not forced
+  if(!force && cacheAgeMs()<CACHE_TTL_MS){
+    const mins=Math.floor(cacheAgeMs()/60000);
+    setConnStatus('connected','Local cache — '+items.length+' items (synced '+mins+'m ago)');
+    return;
+  }
+
+  setConnStatus('loading','Syncing with Firebase...');
   try{
     const[rawLookups,rawItems,rawLends,rawTrips]=await Promise.all([
       api('getLookups'),api('getGear'),api('getLends'),api('getTrips').catch(()=>[])
@@ -2547,7 +2562,7 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 ['addOverlay','detailOverlay','returnOverlay','lendOverlay','addTripOverlay','tripItemPickerOverlay'].forEach(id=>{document.getElementById(id).addEventListener('click',e=>{if(e.target===e.currentTarget) closeModal(id);});});
 let toastTimer;
 function toast(msg,dur=2500){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),dur);}
-async function loadAll(){document.getElementById('spin-all').style.display='';try{await connectAndLoad();}catch(e){}document.getElementById('spin-all').style.display='none';}
+async function loadAll(){document.getElementById('spin-all').style.display='';try{await connectAndLoad({force:true});}catch(e){}document.getElementById('spin-all').style.display='none';}
 function toggleSidebar(){const sb=document.getElementById('sidebar');const ov=document.getElementById('sidebarOverlay');const o=sb.classList.contains('open');if(o){sb.classList.remove('open');ov.classList.remove('open');}else{sb.classList.add('open');ov.classList.add('open');}}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}
 
