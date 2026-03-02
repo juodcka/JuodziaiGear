@@ -1611,24 +1611,46 @@ function renderTripDetail(id){
       <th>Weight</th>
       <th style="width:40px"></th>
     </tr></thead><tbody>`;
-    gearItems.forEach(item=>{
-      const emoji=CAT_EMOJI[item.category]||'🎒';
-      const safePhoto=safeUrl(item.photo_url);
-      const photoCell=safePhoto?`<img src="${safePhoto}" onerror="this.parentElement.innerHTML='${emoji}'" alt="">`:emoji;
-      const removeBtn=t.status!=='ended'?`<button class="btn btn-ghost btn-sm icon-btn" onclick="removeItemFromTrip('${esc(id)}','${esc(item.gear_id)}')" title="Remove">${IC.x}</button>`:'';
-      const meta=[item.subtype,item.weight_g?fmtWeight(parseFloat(item.weight_g)):null].filter(Boolean).join(' · ');
-      const isChecked=!!_packingChecked[item.gear_id];
-      const firstCell=_packingMode
-        ?`<td onclick="togglePackItem('${esc(item.gear_id)}','${esc(id)}')" style="cursor:pointer;text-align:center;user-select:none;padding:4px">${isChecked?'<svg width="24" height="24" viewBox="0 0 20 20" fill="none" stroke="var(--accent)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="14" height="14" rx="2"/><polyline points="7,10 9,12 13,8"/></svg>':'<svg width="24" height="24" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="14" height="14" rx="2"/></svg>'}</td>`
-        :`<td><div class="td-photo">${photoCell}</div></td>`;
-      html+=`<tr id="pkrow-${esc(item.gear_id)}"${isChecked?' class="pack-checked"':''}>
-        ${firstCell}
-        <td class="td-name" onclick="openDetail('${esc(item.gear_id)}')">${esc(item.name)}<small>${esc(item.brand||'')}</small><span class="tg-meta">${esc(meta||'—')}</span></td>
-        <td>${esc(item.type||'—')}</td>
-        <td style="color:var(--muted)">${esc(item.subtype||'—')}</td>
-        <td style="color:var(--muted)">${item.weight_g?fmtWeight(parseFloat(item.weight_g)):'—'}</td>
-        <td>${removeBtn}</td>
-      </tr>`;
+    const tripGroups=groupItems(gearItems);
+    tripGroups.forEach(group=>{
+      const tripRowHTML=(item,extraCls='')=>{
+        const emoji=CAT_EMOJI[item.category]||'🎒';
+        const safePhoto=safeUrl(item.photo_url);
+        const photoCell=safePhoto?`<img src="${safePhoto}" onerror="this.parentElement.innerHTML='${emoji}'" alt="">`:emoji;
+        const removeBtn=t.status!=='ended'?`<button class="btn btn-ghost btn-sm icon-btn" onclick="removeItemFromTrip('${esc(id)}','${esc(item.gear_id)}')" title="Remove">${IC.x}</button>`:'';
+        const meta=[item.subtype,item.weight_g?fmtWeight(parseFloat(item.weight_g)):null].filter(Boolean).join(' · ');
+        const isChecked=!!_packingChecked[item.gear_id];
+        const firstCell=_packingMode
+          ?`<td onclick="togglePackItem('${esc(item.gear_id)}','${esc(id)}')" style="cursor:pointer;text-align:center;user-select:none;padding:4px">${isChecked?'<svg width="24" height="24" viewBox="0 0 20 20" fill="none" stroke="var(--accent)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="14" height="14" rx="2"/><polyline points="7,10 9,12 13,8"/></svg>':'<svg width="24" height="24" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="14" height="14" rx="2"/></svg>'}</td>`
+          :`<td><div class="td-photo">${photoCell}</div></td>`;
+        return `<tr id="pkrow-${esc(item.gear_id)}"${isChecked?' class="pack-checked'+( extraCls?' '+extraCls:'')+'\"':extraCls?' class="'+extraCls+'"':''}>
+          ${firstCell}
+          <td class="td-name${extraCls?' sub-indent':''}" onclick="openDetail('${esc(item.gear_id)}')">${esc(item.name)}<small>${esc(item.brand||'')}</small><span class="tg-meta">${esc(meta||'—')}</span></td>
+          <td>${esc(item.type||'—')}</td>
+          <td style="color:var(--muted)">${esc(item.subtype||'—')}</td>
+          <td style="color:var(--muted)">${item.weight_g?fmtWeight(parseFloat(item.weight_g)):'—'}</td>
+          <td>${removeBtn}</td>
+        </tr>`;
+      };
+      if(group.length===1){
+        html+=tripRowHTML(group[0]);
+      } else {
+        const rep=group[0];
+        const gid='tgrp-'+rep.gear_id;
+        const emoji=CAT_EMOJI[rep.category]||'🎒';
+        const safePhoto=safeUrl(rep.photo_url);
+        const photoInner=safePhoto?`<img src="${safePhoto}" onerror="this.parentElement.innerHTML='${emoji}'" alt="">`:emoji;
+        const totalW=group.reduce((s,i)=>s+(parseFloat(i.weight_g)||0),0);
+        html+=`<tr class="group-row" id="${gid}" onclick="toggleGroup('${gid}')">
+          <td><div style="display:flex;align-items:center;gap:4px"><span class="group-toggle" style="width:14px;flex-shrink:0"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="7,4 13,10 7,16"/></svg></span><div class="td-photo">${photoInner}</div></div></td>
+          <td class="td-name"><span class="group-count">${group.length}</span>${esc(rep.name)}<small>${esc(rep.brand||'')}</small></td>
+          <td>${esc(rep.type||'—')}</td>
+          <td style="color:var(--muted)">${esc(rep.subtype||'—')}</td>
+          <td style="color:var(--muted)">${totalW?fmtWeight(totalW):'—'}</td>
+          <td></td>
+        </tr>`;
+        group.forEach(item=>{ html+=tripRowHTML(item,'sub-row hidden'); });
+      }
     });
     html+='</tbody></table></div>';
   }
