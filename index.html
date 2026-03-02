@@ -1,0 +1,2520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>JuodžiaiGear — Inventory</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
+<style>
+:root {
+  --bg:#f2f0e8; --surface:#fdfcf8; --surface2:#ece9de; --border:#d0ccbb;
+  --accent:#3d7a2e; --accent-light:#e8f2e4;
+  --danger:#c0392b; --danger-light:#fdf0ee;
+  --warn:#b86b00; --warn-light:#fdf3e3;
+  --text:#1c2218; --muted:#6b7a5e; --radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;min-height:100vh}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:58px;position:sticky;top:0;z-index:100;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:3px;color:#1c2218}
+.logo span{color:#b86b00}
+.hdr-right{display:flex;gap:8px;align-items:center}
+.btn{padding:7px 16px;border-radius:7px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;transition:all .14s;white-space:nowrap}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:#2e6636}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border)}.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{background:transparent;color:var(--danger);border:1px solid var(--danger)}.btn-danger:hover{background:var(--danger-light)}
+.btn-warn{background:var(--warn-light);color:var(--warn);border:1px solid rgba(224,123,0,.3)}.btn-warn:hover{background:#ffe8c0}
+.btn-sm{padding:4px 10px;font-size:12px;border-radius:5px}
+.icon-btn{padding:6px 10px;font-size:14px;line-height:1;min-width:44px;min-height:36px;text-align:center}
+.btn:active,.icon-btn:active,.vbtn:active{transform:scale(0.96);opacity:.85;transition:transform .08s,opacity .08s}
+.hdr-search{background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);padding:4px 8px;border-radius:7px;line-height:1;transition:color .12s}
+.hdr-search:hover{color:var(--accent)}
+.view-toggle{display:flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;background:var(--surface2)}
+.vbtn{padding:5px 13px;cursor:pointer;border:none;background:transparent;font-size:15px;color:var(--muted);transition:all .12s;line-height:1}
+.vbtn.active{background:var(--surface);color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.app{display:flex;height:calc(100vh - 58px)}
+.sidebar{width:210px;background:var(--surface);border-right:1px solid var(--border);padding:16px 0;flex-shrink:0;display:flex;flex-direction:column;gap:1px;overflow-y:auto}
+.sidebar-label{font-size:10px;letter-spacing:1.5px;color:var(--muted);padding:8px 18px 4px;text-transform:uppercase;margin-top:6px}
+.sidebar-item{padding:9px 18px;cursor:pointer;display:flex;align-items:center;gap:9px;font-weight:400;color:#555;transition:all .12s;border-left:3px solid transparent;font-size:13.5px}
+.sidebar-item:hover{background:var(--surface2);color:var(--text)}
+.sidebar-item.active{background:var(--accent-light);color:var(--accent);border-left-color:var(--accent);font-weight:600}
+.badge{margin-left:auto;background:var(--surface2);border-radius:20px;font-size:11px;padding:2px 7px;color:var(--muted);font-weight:600}
+.badge.warn{background:var(--warn-light);color:var(--warn)}
+.main{flex:1;overflow-y:auto;padding:24px 28px}
+.main::-webkit-scrollbar{width:5px}
+.main::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.sec-hidden{display:none}
+.page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px}
+.page-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:2px;line-height:1}
+.page-title small{display:block;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);font-weight:300;letter-spacing:0;margin-top:3px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+.stat-value{font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:1px;line-height:1;color:var(--accent)}
+.stat-value.warn{color:var(--warn)}
+.stat-label{font-size:11px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:1px}
+.filter-bar{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+.filter-toggle{display:flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0}
+.filter-toggle .fa{font-size:10px;transition:transform .15s;display:inline-block}
+.filter-toggle.open .fa{transform:rotate(180deg)}
+.filters{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:8px;margin-bottom:16px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px}
+.fi{background:var(--surface);border:1px solid var(--border);border-radius:7px;color:var(--text);padding:7px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color .14s}
+.fi:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(58,125,68,.1)}
+.fi::placeholder{color:var(--muted)}
+.gear-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(285px,1fr));gap:14px}
+.gear-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:transform .14s,box-shadow .14s;cursor:pointer}
+.gear-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.09)}
+.gear-card.lent{border-left:3px solid var(--warn)}
+.gear-card.retired{opacity:.55}
+.card-photo{width:100%;height:160px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:38px;color:var(--muted);overflow:hidden}
+.card-photo img{width:100%;height:160px;object-fit:contain;display:block;padding:4px}
+.card-body{padding:14px}
+.card-badges{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:7px}
+.tag{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;white-space:nowrap;display:inline-block}
+.tag-mountaineering{background:#ddf0f7;color:#1a6b8a}
+.tag-camping{background:#e4f2df;color:#3d7a2e}
+.tag-skiing{background:#ede8fb;color:#5a3ab5}
+.tag-lent{background:var(--warn-light);color:var(--warn)}
+.tag-retired{background:var(--surface2);color:var(--muted)}
+.tag-muted{background:var(--surface2);color:var(--muted)}
+.card-name{font-weight:600;font-size:15px;margin-bottom:1px}
+.card-brand{color:var(--muted);font-size:12px;margin-bottom:9px}
+.card-meta{display:flex;flex-direction:column;gap:2px}
+.card-meta-row{font-size:12px;color:var(--muted)}
+.card-meta-row strong{color:var(--text);font-weight:500}
+.card-actions{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow-x:auto;-webkit-overflow-scrolling:touch}
+.gtable{width:100%;border-collapse:collapse;font-size:13px}
+.gtable thead{background:var(--surface2)}
+.gtable th{text-align:left;padding:10px 14px;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:700;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
+.gtable th:hover{color:var(--accent)}
+.sort-arrow{font-size:9px;margin-left:3px;opacity:.4}
+.gtable th.sorted .sort-arrow{opacity:1}
+.gtable td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+.gtable tr:last-child td{border-bottom:none}
+.gtable tr:hover td{background:var(--surface2)}
+.gtable tr.lent-row td{background:#fdf6ea}
+.gtable tr.retired-row{opacity:.55}
+.td-name{font-weight:600;cursor:pointer}.td-name:hover{color:var(--accent)}
+.td-name small{display:block;font-size:11px;color:var(--muted);font-weight:400}
+.td-photo{width:40px;height:40px;border-radius:6px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;flex-shrink:0}
+.td-photo img{width:40px;height:40px;object-fit:contain;padding:2px}
+.td-actions{display:flex;gap:5px}
+.empty-state{text-align:center;padding:60px 40px;color:var(--muted);grid-column:1/-1}
+.empty-icon{font-size:48px;margin-bottom:10px}
+.empty-title{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--text);margin-bottom:4px}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:200;align-items:center;justify-content:center;padding:20px}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:580px;max-height:90vh;overflow-y:auto;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,.14)}
+.modal::-webkit-scrollbar{width:5px}
+.modal::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;margin-bottom:18px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+.fg{display:flex;flex-direction:column;gap:5px}
+.fg.full{grid-column:1/-1}
+.fl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700}
+.fc{background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text);padding:8px 11px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color .14s;width:100%}
+.fc:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(58,125,68,.1)}
+.fc:disabled{opacity:.5;cursor:not-allowed}
+textarea.fc{resize:vertical;min-height:70px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.lent-sub-box{background:var(--warn-light);border:1px solid rgba(224,123,0,.2);border-radius:8px;padding:12px 14px}
+.detail-header{display:flex;align-items:flex-start;gap:18px;margin-bottom:20px}
+.detail-photo{width:110px;height:110px;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:44px;flex-shrink:0;overflow:hidden;border:1px solid var(--border)}
+.detail-photo img{width:100%;height:100%;object-fit:contain;padding:4px}
+.detail-name{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;margin-bottom:3px}
+.detail-brand{color:var(--muted);font-size:14px;margin-bottom:8px}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.dfl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
+.dfv{font-size:13px}
+.lent-box{background:var(--warn-light);border:1px solid rgba(224,123,0,.2);border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:13px;line-height:1.7}
+.lent-box-title{color:var(--warn);font-weight:700;font-size:11px;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.notes-box{background:var(--surface2);border-radius:8px;padding:12px 14px;font-size:13px;color:#555;margin-bottom:14px;line-height:1.6}
+.lent-table{width:100%;border-collapse:collapse}
+.ltw{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow-x:auto;-webkit-overflow-scrolling:touch}
+.lent-table th{text-align:left;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface2);font-weight:700}
+.lent-table td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:13px}
+.lent-table tr:last-child td{border-bottom:none}
+.lent-table tr:hover td{background:var(--surface2)}
+.lent-table tr.lent-group-header td{background:var(--surface2);padding:8px 14px;font-size:12px;font-weight:700;letter-spacing:.5px;border-top:2px solid var(--border);color:var(--text);cursor:pointer}
+.lent-table tr.lent-group-header:hover td{background:var(--accent-light)}
+.lent-table tr.lent-group-header .group-toggle{margin-right:6px}
+.lent-grp-meta{font-size:11px;color:var(--muted);font-weight:400;margin-left:12px}
+.lent-table tr.lent-sub-row td{background:#fafaf7;border-left:3px solid var(--accent-light)}
+.lent-table tr.lent-sub-row:hover td{background:var(--accent-light)}
+.lent-table tr.lent-sub-row.hidden{display:none}
+.settings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-top:16px}
+.settings-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.settings-card h3{font-size:14px;font-weight:700;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.list-item{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px}
+.list-item:last-child{border-bottom:none}
+.add-row{display:flex;gap:8px;margin-top:12px}
+.add-row .fc{flex:1}
+.hier-tree{font-size:13px}
+.htree-row{display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--border)}
+.htree-row:last-child{border-bottom:none}
+.htree-toggle{cursor:pointer;font-size:10px;color:var(--muted);width:14px;flex-shrink:0;transition:transform .15s;user-select:none;display:inline-block}
+.htree-toggle.open{transform:rotate(90deg)}
+.htree-label{flex:1;font-weight:600;cursor:default}
+.htree-sub-label{flex:1;color:var(--text);cursor:default}
+.htree-actions{display:flex;gap:3px;flex-shrink:0}
+.htree-edit-input{display:none;flex:1;font-size:12px;padding:3px 8px;border:1px solid var(--border);border-radius:5px}
+.htree-row.editing .htree-edit-input{display:block}
+.htree-row.editing .htree-label,.htree-row.editing .htree-sub-label{display:none}
+.htree-row.editing .edit-show{display:none!important}
+.htree-children{padding-left:20px;border-left:2px solid var(--border);margin-left:6px;margin-top:2px;margin-bottom:4px}
+.htree-add-row{display:none;align-items:center;gap:6px;padding:4px 0}
+.htree-add-row.open{display:flex}
+.htree-add-btn{background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer;padding:4px 0;text-align:left;font-family:inherit;opacity:.8}
+.htree-add-btn:hover{opacity:1}
+.conn-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:8px 24px;display:flex;align-items:center;gap:12px;font-size:12px;color:var(--muted)}
+.conn-dot{width:8px;height:8px;border-radius:50%;background:#ccc;flex-shrink:0}
+.conn-dot.connected{background:#3a7d44}
+.conn-dot.error{background:var(--danger)}
+.conn-dot.loading{background:var(--warn);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.conn-url{flex:1}
+.conn-url input{background:transparent;border:none;outline:none;color:var(--text);font-size:12px;width:100%;font-family:'DM Sans',sans-serif}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--text);color:#fff;padding:12px 18px;border-radius:8px;font-size:13px;z-index:9999;transform:translateY(100px);transition:transform .3s;pointer-events:none}
+.toast.show{transform:translateY(0)}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ═══════════ STATISTICS ═══════════ */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:26px}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;position:relative;overflow:hidden}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius) var(--radius) 0 0}
+.kpi-green::before{background:linear-gradient(90deg,#4e9a3a,#7acc50)}
+.kpi-amber::before{background:linear-gradient(90deg,#c97a00,#f0a030)}
+.kpi-blue::before{background:linear-gradient(90deg,#1a6b8a,#2aa0c8)}
+.kpi-purple::before{background:linear-gradient(90deg,#5a3ab5,#8a6be0)}
+.kpi-red::before{background:linear-gradient(90deg,#d63031,#ff6b6b)}
+.kpi-value{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:1px;line-height:1;margin-bottom:2px}
+.kpi-green .kpi-value{color:#3d7a2e}
+.kpi-amber .kpi-value{color:#b86b00}
+.kpi-blue .kpi-value{color:#1a6b8a}
+.kpi-purple .kpi-value{color:#5a3ab5}
+.kpi-red .kpi-value{color:#d63031}
+.kpi-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:3px}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px}
+.chart-card.full{grid-column:1/-1}
+.chart-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;color:var(--text);margin-bottom:1px}
+.chart-subtitle{font-size:11px;color:var(--muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:.8px}
+.chart-wrap{position:relative;width:100%;height:240px}
+.chart-tabs{display:flex;gap:4px;margin-bottom:14px}
+.chart-tab{padding:4px 12px;border-radius:5px;border:1px solid var(--border);background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);transition:all .12s}
+.chart-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.breakdown-table{width:100%;border-collapse:collapse;font-size:12px}
+.breakdown-table th{text-align:left;padding:7px 10px;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);border-bottom:2px solid var(--border);font-weight:700}
+.breakdown-table td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.breakdown-table tr:last-child td{border-bottom:none}
+.breakdown-table tr:hover td{background:var(--surface2)}
+.mini-bar-bg{background:var(--surface2);border-radius:3px;height:6px;width:100%;overflow:hidden}
+.mini-bar-fill{height:6px;border-radius:3px;transition:width .5s ease}
+
+
+
+.list-item-edit{display:none;flex:1;margin-right:6px}
+.list-item.editing .list-item-edit{display:block}
+.list-item.editing .list-item-label{display:none}
+.list-item-label{flex:1}
+.list-item-btns{display:flex;gap:4px;flex-shrink:0}
+
+
+/* ═══════════ LEND DIALOG ═══════════ */
+.collapsible-header{display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:12px 0;border-top:1px solid var(--border);margin-top:20px;user-select:none}
+.collapsible-header:hover .collapsible-title{color:var(--accent)}
+.collapsible-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;color:var(--text)}
+.collapsible-toggle{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;font-weight:600;text-transform:uppercase;letter-spacing:.8px}
+.collapsible-body{overflow:hidden;transition:max-height .3s ease,opacity .3s ease;max-height:0;opacity:0}
+.collapsible-body.open{max-height:2000px;opacity:1}
+.ltw{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+
+/* ═══════════ GROUPED TABLE ROWS ═══════════ */
+.gtable tr.group-row td{background:var(--surface);cursor:pointer;font-weight:600}
+.gtable tr.group-row:hover td{background:var(--accent-light)}
+.gtable tr.group-row.open td{background:var(--accent-light)}
+.group-count{display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;border-radius:12px;font-size:11px;font-weight:700;padding:1px 7px;margin:0 6px 0 0;min-width:22px}
+.group-toggle{font-size:11px;color:var(--muted);margin:0 4px 0 0;transition:transform .15s;display:inline-block}
+.group-row.open .group-toggle{transform:rotate(90deg)}
+.gtable tr.sub-row td{background:#fafaf7;border-left:3px solid var(--accent-light)}
+.gtable tr.sub-row:hover td{background:var(--accent-light)}
+.gtable tr.sub-row.hidden{display:none}
+.sub-indent{padding-left:24px !important}
+
+/* ═══════════ INSPECTION ═══════════ */
+/* Age tiers — soft, in-theme */
+:root {
+  --age-green-bg:#eaf4e6; --age-green-border:#b8d9b0; --age-green-text:#2e6627;
+  --age-amber-bg:#fdf3e3; --age-amber-border:#e8c87a; --age-amber-text:#7a4a00;
+  --age-red-bg:#faeae6;   --age-red-border:#e0a898;   --age-red-text:#8a2a18;
+}
+.insp-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:28px}
+.insp-card{border-radius:var(--radius);padding:20px 22px;position:relative;overflow:hidden;border:1px solid}
+.insp-card.age-green{background:var(--age-green-bg);border-color:var(--age-green-border)}
+.insp-card.age-amber{background:var(--age-amber-bg);border-color:var(--age-amber-border)}
+.insp-card.age-red  {background:var(--age-red-bg);  border-color:var(--age-red-border)}
+.insp-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.insp-card.age-green::before{background:linear-gradient(90deg,#4e9a3a,#7acc50)}
+.insp-card.age-amber::before{background:linear-gradient(90deg,#b86b00,#e8a020)}
+.insp-card.age-red::before  {background:linear-gradient(90deg,#8a2a18,#c05030)}
+.insp-value{font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:1px;line-height:1;margin-bottom:2px}
+.insp-card.age-green .insp-value{color:var(--age-green-text)}
+.insp-card.age-amber .insp-value{color:var(--age-amber-text)}
+.insp-card.age-red   .insp-value{color:var(--age-red-text)}
+.insp-label{font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:2px}
+.insp-card.age-green .insp-label{color:var(--age-green-text)}
+.insp-card.age-amber .insp-label{color:var(--age-amber-text)}
+.insp-card.age-red   .insp-label{color:var(--age-red-text)}
+.insp-sub{font-size:11px;color:var(--muted)}
+.insp-row-green td{background:#f2faf0 !important}
+.insp-row-amber td{background:#fdf6e8 !important}
+.insp-row-red   td{background:#fdf0ec !important}
+.gtable tr.insp-row-green:hover td{background:#e6f5e2 !important}
+.gtable tr.insp-row-amber:hover td{background:#faefd8 !important}
+.gtable tr.insp-row-red:hover   td{background:#f8e6e0 !important}
+.age-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;flex-shrink:0}
+.age-dot-green{background:#4e9a3a}
+.age-dot-amber{background:#b86b00}
+.age-dot-red  {background:#8a2a18}
+
+/* ═══════════ MOBILE ═══════════ */
+.mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:150;box-shadow:0 -2px 12px rgba(0,0,0,.08);padding-bottom:env(safe-area-inset-bottom,0px)}
+.mobile-nav-items{display:flex;justify-content:space-around;align-items:stretch}
+.mnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 4px 14px;min-height:48px;cursor:pointer;color:var(--muted);font-size:12px;gap:4px;border:none;background:transparent;transition:color .12s;position:relative}
+.mnav-item:active{opacity:.7;transition:opacity .08s}
+.mnav-item.active{color:var(--accent)}
+.mnav-item span:first-child{font-size:26px;line-height:1}
+.mnav-badge{position:absolute;top:6px;right:50%;transform:translateX(14px);background:var(--warn);color:#fff;font-size:9px;font-weight:700;border-radius:10px;padding:1px 5px;min-width:16px;text-align:center}
+.hamburger{display:none;background:transparent;border:1px solid var(--border);border-radius:7px;padding:5px 10px;cursor:pointer;font-size:18px;line-height:1;color:var(--muted)}
+.hamburger:hover{color:var(--accent);border-color:var(--accent)}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:130}
+.sidebar-overlay.open{display:block}
+@media(max-width:900px){
+  .hamburger{display:block}
+  .sidebar{position:fixed;left:-230px;top:0;bottom:0;z-index:140;transition:left .22s ease;height:100vh;padding-top:120px;}
+  .sidebar.open{left:0;box-shadow:4px 0 20px rgba(0,0,0,.15)}
+}
+.fab{display:none;position:fixed;bottom:calc(82px + env(safe-area-inset-bottom,0px));right:18px;z-index:140;width:52px;height:52px;border-radius:50%;background:var(--accent);color:#fff;font-size:28px;line-height:1;border:none;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.22);align-items:center;justify-content:center;transition:transform .12s,box-shadow .12s}
+.fab:active{transform:scale(0.92);box-shadow:0 2px 8px rgba(0,0,0,.18)}
+@media(max-width:720px){
+  .main{padding:14px;padding-bottom:calc(80px + env(safe-area-inset-bottom,0px))}
+  .mobile-nav{display:block}
+  .fab{display:flex}
+  .conn-bar .conn-url{display:none}
+  .form-grid{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .detail-grid{grid-template-columns:1fr}
+  .settings-grid{grid-template-columns:1fr !important}
+  .charts-grid{grid-template-columns:1fr}
+  .chart-card.full{grid-column:1}
+  .trips-grid{grid-template-columns:1fr}
+  .trip-gear-gtable th:nth-child(3),.trip-gear-gtable th:nth-child(4),.trip-gear-gtable th:nth-child(5),
+  .trip-gear-gtable td:nth-child(3),.trip-gear-gtable td:nth-child(4),.trip-gear-gtable td:nth-child(5){display:none}
+  .tg-meta{display:block}
+}
+
+/* ═══════════ TRIPS ═══════════ */
+.trips-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.trip-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;transition:box-shadow .15s}
+.trip-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.1)}
+.trip-card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px}
+.trip-card-name{font-size:15px;font-weight:700;flex:1}
+.trip-card-dates{font-size:12px;color:var(--muted);margin-bottom:10px}
+.trip-card-stats{display:flex;gap:16px;font-size:12px;color:var(--muted);margin-bottom:12px}
+.trip-card-stat strong{color:var(--text);font-size:14px;display:block}
+.trip-card-actions{display:flex;gap:6px;justify-content:flex-end;margin-top:10px}
+.tag-planned{background:#e8e8e8;color:#555}
+.tag-in_progress{background:var(--accent-light);color:var(--accent)}
+.tag-ended{background:var(--surface2);color:var(--muted)}
+.tag-in_trip{background:var(--muted);color:var(--text);font-weight:600}
+.trip-detail-stats{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.tg-meta{display:none;font-size:11px;color:var(--muted);margin-top:2px}
+tr.pack-checked td{opacity:.4;text-decoration:line-through}
+tr.pack-checked td:first-child{text-decoration:none;opacity:1}
+.trip-stat{background:var(--surface2);border-radius:8px;padding:12px 18px;min-width:100px}
+.trip-stat-val{font-size:22px;font-weight:700;color:var(--accent)}
+.trip-stat-lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.slog-entry{padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.slog-entry:last-child{border-bottom:none}
+.slog-date{font-size:11px;color:var(--muted)}
+.slog-type{font-size:10px;font-weight:700;text-transform:uppercase;padding:1px 6px;border-radius:4px;background:var(--surface2);color:var(--muted);margin-left:6px}
+.slog-add{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.picker-list{max-height:380px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;margin-top:10px}
+.picker-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border)}
+.picker-row:last-child{border-bottom:none}
+.picker-row.disabled{opacity:.45;pointer-events:none}
+.picker-conflict{font-size:11px;color:var(--warn);display:block}
+.picker-search{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface2)}
+</style>
+</head>
+<body>
+
+<div class="conn-bar">
+  <div class="conn-dot" id="connDot"></div>
+  <span id="connLabel">Connecting to Firebase...</span>
+  <button class="btn btn-ghost btn-sm" onclick="connectAndLoad()" style="margin-left:auto">&#8635; Reload</button>
+</div>
+
+<header>
+  <div style="display:flex;align-items:center;gap:12px">
+    <button class="hamburger" onclick="toggleSidebar()" title="Menu">&#8801;</button>
+    <div class="logo">Juodžiai<span>Gear</span></div>
+  </div>
+  <div class="hdr-right">
+    <button class="hdr-search" onclick="openGlobalSearch()" title="Search">&#128269;</button>
+    <div class="view-toggle">
+      <button class="vbtn" id="vCard" title="Card view" onclick="setView('card')">&#9638;</button>
+      <button class="vbtn active" id="vTable" title="Table view" onclick="setView('table')">&#9776;</button>
+    </div>
+    <button class="btn btn-primary" onclick="openAddModal()">+ Add Gear</button>
+  </div>
+</header>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<div class="app">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-label">Inventory</div>
+    <div class="sidebar-item active" onclick="showSec('all')">&#128193; All Gear <span class="badge" id="b-all">0</span></div>
+    <div class="sidebar-label">Tracking</div>
+    <div class="sidebar-item" onclick="showSec('lent')">&#129309; Lent Out <span class="badge warn" id="b-lent">0</span></div>
+    <div class="sidebar-item" onclick="showSec('trips')">&#128506; Trips <span class="badge" id="b-trips"></span></div>
+    <div class="sidebar-item" onclick="showSec('retired')">&#128230; Retired <span class="badge" id="b-retired">0</span></div>
+    <div class="sidebar-label">Insights</div>
+    <div class="sidebar-item" onclick="showSec('inspection')">&#128269; Inspection</div>
+    <div class="sidebar-item" onclick="showSec('statistics')">&#128202; Statistics</div>
+    <div class="sidebar-label">Admin</div>
+    <div class="sidebar-item" onclick="showSec('settings')">&#9881;&#65039; Settings</div>
+  </nav>
+
+  <main class="main">
+
+    <div id="sec-all">
+      <div class="page-header">
+        <div class="page-title">All Gear <small>Complete inventory</small></div>
+        <button class="btn btn-ghost btn-sm" onclick="loadAll()"><span class="spinner" id="spin-all" style="display:none"></span> Refresh</button>
+      </div>
+      <div class="stats">
+        <div class="stat-card"><div class="stat-value" id="st-total">&#8212;</div><div class="stat-label">Total Items</div></div>
+        <div class="stat-card"><div class="stat-value warn" id="st-lent">&#8212;</div><div class="stat-label">Lent Out</div></div>
+        <div class="stat-card"><div class="stat-value" id="st-brands">&#8212;</div><div class="stat-label">Brands</div></div>
+        <div class="stat-card"><div class="stat-value" id="st-retired">&#8212;</div><div class="stat-label">Retired</div></div>
+      </div>
+      <div class="filter-bar">
+        <input type="text" class="fi" id="searchInput" placeholder="&#128269; Search&hellip;" oninput="renderAll()" style="flex:1;min-width:0">
+        <button class="btn btn-ghost btn-sm filter-toggle" id="filterToggleBtn" onclick="toggleFilters()">Filters <span id="filterCount" class="badge" style="display:none"></span> <span class="fa">&#9660;</span></button>
+      </div>
+      <div class="filters" id="filtersRow" style="display:none">
+        <select class="fi" id="fCat" onchange="onFilterCatChange()">
+          <option value="">All Categories</option>
+        </select>
+        <select class="fi" id="filterType" onchange="onFilterTypeChange()">
+          <option value="">All Types</option>
+        </select>
+        <select class="fi" id="filterSubtype" onchange="renderAll()">
+          <option value="">All Subtypes</option>
+        </select>
+        <select class="fi" id="filterBrand" onchange="renderAll()">
+          <option value="">All Brands</option>
+        </select>
+        <select class="fi" id="fProdYear" onchange="renderAll()">
+          <option value="">All Prod. Years</option>
+        </select>
+        <select class="fi" id="fSt" onchange="renderAll()">
+          <option value="">Active Only</option>
+          <option value="all">All Status</option>
+          <option value="active">Active (idle)</option>
+          <option value="in_trip">In Trip</option>
+          <option value="lent">Lent Out</option>
+          <option value="retired">Retired</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="clearFilters()" id="clearFiltersBtn" style="display:none">&#10005; Clear</button>
+      </div>
+      <div id="allCard" class="gear-grid"></div>
+      <div id="allTable" style="display:none"><div class="table-wrap"><table class="gtable">
+        <thead><tr>
+          <th style="width:62px"></th>
+          <th onclick="sortBy('name')" id="th-name">Name <span class="sort-arrow" id="sa-name">&#9650;</span></th>
+          <th onclick="sortBy('brand')" id="th-brand">Brand <span class="sort-arrow" id="sa-brand"></span></th>
+          <th onclick="sortBy('category')" id="th-category">Category <span class="sort-arrow" id="sa-category"></span></th>
+          <th onclick="sortBy('type')" id="th-type">Type <span class="sort-arrow" id="sa-type"></span></th>
+          <th onclick="sortBy('subtype')" id="th-subtype">Subtype <span class="sort-arrow" id="sa-subtype"></span></th>
+          <th onclick="sortBy('date_purchased')" id="th-date_purchased">Purchased <span class="sort-arrow" id="sa-date_purchased"></span></th>
+          <th onclick="sortBy('date_produced')" id="th-date_produced">Produced <span class="sort-arrow" id="sa-date_produced"></span></th>
+          <th onclick="sortBy('status')" id="th-status">Status <span class="sort-arrow" id="sa-status"></span></th>
+          <th>Actions</th>
+        </tr></thead>
+        <tbody id="allTbody"></tbody>
+      </table></div></div>
+    </div>
+
+    <div id="sec-lent" class="sec-hidden">
+      <div class="page-header"><div class="page-title">&#129309; Lent Out <small>Currently with others</small></div></div>
+      <div id="lentContent"></div>
+      <div id="lentHistorySection">
+        <div class="collapsible-header" onclick="toggleLentHistory()">
+          <div class="collapsible-title">&#128203; Lending History</div>
+          <div class="collapsible-toggle"><span id="lentHistoryToggleIcon">&#9660;</span> <span id="lentHistoryToggleLabel">Show</span></div>
+        </div>
+        <div class="collapsible-body" id="lentHistoryBody">
+          <div style="padding-top:12px" id="lentHistoryContent"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRIPS -->
+    <div id="sec-trips" class="sec-hidden">
+      <div id="trips-list-view">
+        <div class="page-header">
+          <div class="page-title">&#128506; Trips</div>
+          <button class="btn btn-primary btn-sm" onclick="openAddTrip()">+ New Trip</button>
+        </div>
+        <div id="tripsContent"></div>
+      </div>
+      <div id="trips-detail-view" style="display:none">
+        <div class="page-header">
+          <button class="btn btn-ghost btn-sm" onclick="backToTrips()">&#8592; Back</button>
+          <div id="tripDetailTitle" class="page-title"></div>
+          <div id="tripDetailActions" style="display:flex;gap:8px"></div>
+        </div>
+        <div id="tripDetailContent"></div>
+      </div>
+    </div>
+
+    <div id="sec-retired" class="sec-hidden">
+      <div class="page-header"><div class="page-title">&#128230; Retired <small>Decommissioned gear</small></div></div>
+      <div id="retiredCard" class="gear-grid"></div>
+      <div id="retiredTable" style="display:none"><div class="table-wrap"><table class="gtable"><thead><tr><th style="width:44px"></th><th>Name</th><th>Brand</th><th>Category</th><th>Type</th><th>Reason</th><th>Purchased</th><th>Produced</th><th>Actions</th></tr></thead><tbody id="retiredTbody"></tbody></table></div></div>
+    </div>
+
+
+    <!-- INSPECTION -->
+    <div id="sec-inspection" class="sec-hidden">
+      <div class="page-header">
+        <div class="page-title">&#128269; Inspection <small>Gear age &amp; maintenance overview</small></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <select class="fi" id="inspStatusFilter" onchange="renderInspection()" style="font-size:12px">
+            <option value="active">Active gear only</option>
+            <option value="all">All gear incl. retired</option>
+          </select>
+        </div>
+      </div>
+      <div class="insp-cards" id="inspCards"></div>
+      <div class="table-wrap">
+        <table class="gtable">
+          <thead><tr>
+            <th style="width:44px"></th>
+            <th>Name</th>
+            <th>Brand</th>
+            <th>Category</th>
+            <th>Type</th>
+            <th>Produced</th>
+            <th>Age</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr></thead>
+          <tbody id="inspTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- STATISTICS -->
+    <div id="sec-statistics" class="sec-hidden">
+      <div class="page-header">
+        <div class="page-title">Statistics <small>Gear inventory insights</small></div>
+        <select class="fi" id="statStatusFilter" onchange="renderStatistics()" style="font-size:12px">
+          <option value="active">Active gear only</option>
+          <option value="all">All gear incl. retired</option>
+          <option value="retired">Retired gear only</option>
+        </select>
+      </div>
+      <div class="kpi-row" id="statsKpi"></div>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title">Items Acquired per Year</div>
+          <div class="chart-subtitle">Count by category</div>
+          <div class="chart-tabs">
+            <button class="chart-tab active" onclick="setCountMode('stacked',this)">Stacked</button>
+            <button class="chart-tab" onclick="setCountMode('grouped',this)">Grouped</button>
+            <button class="chart-tab" onclick="setCountMode('line',this)">Line</button>
+          </div>
+          <div class="chart-wrap"><canvas id="chartCountYear"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Collection Breakdown</div>
+          <div class="chart-subtitle">Items distribution</div>
+          <div class="chart-tabs">
+            <button class="chart-tab active" onclick="setCatMode('category',this)">Category</button>
+            <button class="chart-tab" onclick="setCatMode('type',this)">Type</button>
+            <button class="chart-tab" onclick="setCatMode('brand',this)">Brand</button>
+          </div>
+          <div class="chart-wrap"><canvas id="chartCatBreakdown"></canvas></div>
+        </div>
+      </div>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title">Spend per Year</div>
+          <div class="chart-subtitle">Purchase value by category</div>
+          <div class="chart-tabs">
+            <button class="chart-tab active" onclick="setSpendMode('stacked',this)">Stacked</button>
+            <button class="chart-tab" onclick="setSpendMode('grouped',this)">Grouped</button>
+            <button class="chart-tab" onclick="setSpendMode('line',this)">Line</button>
+          </div>
+          <div class="chart-wrap"><canvas id="chartSpendYear"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Spend Breakdown</div>
+          <div class="chart-subtitle">Value distribution</div>
+          <div class="chart-tabs">
+            <button class="chart-tab active" onclick="setSpendCatMode('category',this)">Category</button>
+            <button class="chart-tab" onclick="setSpendCatMode('type',this)">Type</button>
+            <button class="chart-tab" onclick="setSpendCatMode('brand',this)">Brand</button>
+          </div>
+          <div class="chart-wrap"><canvas id="chartSpendCat"></canvas></div>
+        </div>
+      </div>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title">By Category</div>
+          <div class="chart-subtitle">Items &amp; value breakdown</div>
+          <div id="tableByCategory"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Top Brands</div>
+          <div class="chart-subtitle">Items &amp; value by brand</div>
+          <div id="tableByBrand"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="sec-settings" class="sec-hidden">
+      <div class="page-header"><div class="page-title">Settings <small>Manage brands, categories, types</small></div></div>
+      <div class="settings-card" style="margin-bottom:20px">
+        <h3>&#128293; Firebase Firestore</h3>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:10px">Project: <strong>juodziaigear</strong></div>
+        <button class="btn btn-ghost btn-sm" onclick="connectAndLoad()">&#8635; Reload data from Firebase</button>
+      </div>
+      <div class="settings-grid">
+        <div class="settings-card">
+          <h3>&#128193; Categories</h3>
+          <div id="categoryList" style="max-height:200px;overflow-y:auto"></div>
+          <div class="add-row">
+            <input type="text" class="fc" id="newCategory" placeholder="Add category&hellip;" onkeydown="if(event.key==='Enter') addCategory()">
+            <button class="btn btn-primary btn-sm" onclick="addCategory()">Add</button>
+          </div>
+        </div>
+        <div class="settings-card">
+          <h3>&#127991; Brands</h3>
+          <div id="brandList" style="max-height:300px;overflow-y:auto"></div>
+          <div class="add-row">
+            <input type="text" class="fc" id="newBrand" placeholder="Add brand&hellip;" onkeydown="if(event.key==='Enter') addBrand()">
+            <button class="btn btn-primary btn-sm" onclick="addBrand()">Add</button>
+          </div>
+        </div>
+        <div class="settings-card" style="grid-column:1/-1">
+          <h3>&#128193; Category &rarr; Type &rarr; Subtype Hierarchy</h3>
+          <div id="hierTree" class="hier-tree"></div>
+          <div style="margin-top:10px">
+            <button class="htree-add-btn" style="font-size:13px" onclick="showAddCat()">+ Add Category</button>
+            <div class="htree-add-row" id="add-cat-row" style="margin-top:6px">
+              <input type="text" class="fc" id="new-cat-input" placeholder="Category name&hellip;" style="flex:1;font-size:13px" onkeydown="if(event.key==='Enter') confirmAddCat()">
+              <button class="btn btn-primary btn-sm" onclick="confirmAddCat()">Add</button>
+              <button class="btn btn-ghost btn-sm" onclick="cancelAddCat()">&#10005;</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div class="overlay" id="addOverlay">
+  <div class="modal">
+    <div class="modal-title" id="mTitle">Add Gear</div>
+    <div class="form-grid">
+      <div class="fg full"><label class="fl">Item Name *</label><input type="text" class="fc" id="fName" placeholder="e.g. Petzl Vertex Helmet"></div>
+      <div class="fg"><label class="fl">Brand *</label><select class="fc" id="fBrand"><option value="">&#8212; select brand &#8212;</option></select></div>
+      <div class="fg"><label class="fl">Category *</label><select class="fc" id="fCategory" onchange="onCatChange()"><option value="">&#8212; select &#8212;</option></select></div>
+      <div class="fg"><label class="fl">Type</label><select class="fc" id="fType" onchange="onTypeChange()"><option value="">&#8212; select category first &#8212;</option></select></div>
+      <div class="fg"><label class="fl">Subtype</label><select class="fc" id="fSubtype"><option value="">&#8212; select type first &#8212;</option></select></div>
+      <div class="fg"><label class="fl">Model</label><input type="text" class="fc" id="fModel" placeholder="e.g. Vertex Vent"></div>
+      <div class="fg"><label class="fl">Date Purchased</label><input type="date" class="fc" id="fDateBought"></div>
+      <div class="fg"><label class="fl">Date of Production</label><input type="date" class="fc" id="fDateProd"></div>
+      <div class="fg"><label class="fl">Price Paid</label><input type="number" class="fc" id="fPrice" placeholder="0.00" min="0" step="0.01"></div>
+      <div class="fg"><label class="fl">Weight (g)</label><input type="number" class="fc" id="fWeight" placeholder="e.g. 450"></div>
+      <div class="fg"><label class="fl">Color / Size</label><input type="text" class="fc" id="fSize" placeholder="e.g. Red / L"></div>
+      <div class="fg"><label class="fl">Serial / Cert. No.</label><input type="text" class="fc" id="fSerial" placeholder="e.g. CE EN12492"></div>
+      <div class="fg"><label class="fl">Status</label><select class="fc" id="fStatus" onchange="toggleLentFields()"><option value="active">Active</option><option value="lent">Lent Out</option><option value="retired">Retired</option></select></div>
+      <div class="fg" id="retireReasonGroup" style="display:none"><label class="fl">Retirement Reason</label><select class="fc" id="fRetireReason"><option value="worn_out">Worn out</option><option value="damaged">Damaged</option><option value="upgraded">Upgraded / replaced</option><option value="sold">Sold</option><option value="other">Other</option></select></div>
+      <div class="fg full" id="lentFields" style="display:none">
+        <div class="lent-sub-box">
+          <div class="form-grid" style="margin:0">
+            <div class="fg"><label class="fl">Lent To</label><input type="text" class="fc" id="fLentTo" placeholder="Person's name"></div>
+            <div class="fg"><label class="fl">Date Lent</label><input type="date" class="fc" id="fLentDate"></div>
+            <div class="fg full"><label class="fl">Expected Return</label><input type="date" class="fc" id="fLentReturn"></div>
+          </div>
+        </div>
+      </div>
+      <div class="fg full">
+        <label class="fl">Photo URL</label>
+        <input type="text" class="fc" id="fPhotoUrl" placeholder="Google Drive share link or direct image URL">
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Upload to Google Drive &rarr; Share &rarr; Copy link</div>
+      </div>
+      <div class="fg full"><label class="fl">Notes</label><textarea class="fc" id="fNotes" placeholder="Condition, usage history, inspection dates&hellip;"></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('addOverlay')">Cancel</button>
+      <button class="btn btn-primary" id="saveBtn" onclick="saveItem()">Save Gear</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="detailOverlay">
+  <div class="modal"><div id="detailContent"></div><div class="modal-actions" id="detailActions"></div></div>
+</div>
+
+<!-- LEND MODAL -->
+<div class="overlay" id="lendOverlay">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-title" id="lendTitle">Lend Item</div>
+    <input type="hidden" id="lGearId">
+    <div style="background:var(--surface2);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px">
+      <span style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:700">Item</span><br>
+      <strong id="lGearName" style="font-size:14px"></strong>
+    </div>
+    <div class="form-grid" style="grid-template-columns:1fr">
+      <div class="fg"><label class="fl">Lent To *</label><input type="text" class="fc" id="lLentTo" placeholder="Person's name"></div>
+      <div class="fg"><label class="fl">Date Lent</label><input type="date" class="fc" id="lDateLent"></div>
+      <div class="fg"><label class="fl">Expected Return Date</label><input type="date" class="fc" id="lDateDue"></div>
+      <div class="fg"><label class="fl">Notes</label><input type="text" class="fc" id="lNotes" placeholder="Optional notes"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('lendOverlay')">Cancel</button>
+      <button class="btn btn-primary" id="confirmLendBtn" onclick="confirmLend()">Confirm Lend</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="overlay" id="returnOverlay">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title">Mark as Returned</div>
+    <input type="hidden" id="rLendId"><input type="hidden" id="rGearId">
+    <div class="form-grid" style="grid-template-columns:1fr">
+      <div class="fg"><label class="fl">Date Returned</label><input type="date" class="fc" id="rDate"></div>
+      <div class="fg"><label class="fl">Condition on Return</label><input type="text" class="fc" id="rCondition" placeholder="Good / Minor wear / Damaged&hellip;"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('returnOverlay')">Cancel</button>
+      <button class="btn btn-primary" id="confirmReturnBtn" onclick="confirmReturn()">Confirm Return</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT TRIP MODAL -->
+<div class="overlay" id="addTripOverlay">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-title" id="addTripTitle">New Trip</div>
+    <div class="form-grid" style="grid-template-columns:1fr">
+      <div class="fg"><label class="fl">Trip Name *</label><input type="text" class="fc" id="tripName" placeholder="e.g. Alpine Weekend"></div>
+      <div class="fg"><label class="fl">Start Date</label><input type="date" class="fc" id="tripStartDate"></div>
+      <div class="fg"><label class="fl">End Date</label><input type="date" class="fc" id="tripEndDate"></div>
+      <div class="fg"><label class="fl">Notes</label><textarea class="fc" id="tripNotes" rows="3" placeholder="Optional notes..."></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('addTripOverlay')">Cancel</button>
+      <button class="btn btn-primary" id="saveTripBtn" onclick="saveTrip()">Save Trip</button>
+    </div>
+  </div>
+</div>
+
+<!-- TRIP ITEM PICKER MODAL -->
+<div class="overlay" id="tripItemPickerOverlay">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-title">Add Items to Trip</div>
+    <input type="text" class="fc" id="pickerSearch" placeholder="Search items..." oninput="filterPickerList()" style="margin-bottom:8px">
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:12px;cursor:pointer"><input type="checkbox" id="pickerAvailOnly" onchange="populatePickerList(document.getElementById('pickerSearch').value)"> Show available only</label>
+    <div class="picker-list" id="pickerList"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('tripItemPickerOverlay')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmTripItemPicker()">Add Selected</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════ STATE ════
+let items=[], lends=[], lookups={brands:[],hierarchy:{}}, trips=[];
+let editingId=null, curSection='all', curView='table', sortCol='brand', sortAsc=true;
+let editingTripId=null, currentTripId=null;
+let _packingMode=false, _packingChecked={};
+let _dupGearIds=null;
+const _charts={};
+let countMode='stacked', catMode='category', spendMode='stacked', spendCatMode='category';
+
+const CAT_EMOJI={Mountaineering:'⛰',Camping:'⛺',Skiing:'🎿'};
+const CAT_COLORS={
+  Mountaineering:{bg:'rgba(26,107,138,0.75)',border:'#1a6b8a',tagBg:'#ddf0f7',tagColor:'#1a6b8a'},
+  Camping:{bg:'rgba(61,122,46,0.8)',border:'#3d7a2e',tagBg:'#e4f2df',tagColor:'#3d7a2e'},
+  Skiing:{bg:'rgba(90,58,181,0.75)',border:'#5a3ab5',tagBg:'#ede8fb',tagColor:'#5a3ab5'},
+};
+// Fallback colors for user-added categories
+const EXTRA_COLORS=[
+  {bg:'rgba(180,60,60,0.75)',border:'#b43c3c',tagBg:'#f7dede',tagColor:'#b43c3c'},
+  {bg:'rgba(60,140,140,0.75)',border:'#3c8c8c',tagBg:'#dcf1f1',tagColor:'#3c8c8c'},
+  {bg:'rgba(140,100,40,0.75)',border:'#8c6428',tagBg:'#f2ecdf',tagColor:'#8c6428'},
+  {bg:'rgba(80,60,160,0.75)',border:'#503ca0',tagBg:'#e5e0f7',tagColor:'#503ca0'},
+  {bg:'rgba(40,120,80,0.75)',border:'#287850',tagBg:'#dcf0e7',tagColor:'#287850'},
+];
+function getCatColor(cat){
+  if(CAT_COLORS[cat]) return CAT_COLORS[cat];
+  const idx=Object.keys(lookups.hierarchy||{}).sort().indexOf(cat);
+  return EXTRA_COLORS[idx%EXTRA_COLORS.length]||{bg:'rgba(120,120,120,0.6)',border:'#888',tagBg:'var(--surface2)',tagColor:'var(--muted)'};
+}
+function getCatTagStyle(cat){const c=getCatColor(cat);return `background:${c.tagBg};color:${c.tagColor}`;}
+const PALETTE=['#3a7d44','#1a6b8a','#5a3ab5','#e07b00','#d63031','#2aa0c8','#5cb85c','#8a6be0','#f5a623','#ff6b6b'];
+let CATS=['Mountaineering','Camping','Skiing']; // dynamically updated from lookups.hierarchy
+const SECTIONS=['all','lent','trips','retired','inspection','statistics','settings'];
+
+// ════ LOCAL STORAGE ════
+function loadLocal(){
+  items=JSON.parse(localStorage.getItem('sg_items')||'[]');
+  lends=JSON.parse(localStorage.getItem('sg_lends')||'[]');
+  trips=JSON.parse(localStorage.getItem('sg_trips')||'[]');
+  lookups=JSON.parse(localStorage.getItem('sg_lookups')||JSON.stringify({
+    brands:["Black Diamond","Petzl","MSR","Osprey","Salomon","Arc'teryx","Mammut","La Sportiva","Scarpa","Camp"],
+    hierarchy:{
+      Mountaineering:{Protection:["Helmet","Harness","Crampons","Ice Axe"],Belay:["Belay Device","Carabiner","Rope","Sling"],Footwear:["Mountaineering Boot","Approach Shoe"],Carry:["Pack / Rucksack"],Apparel:["Shell Jacket","Base Layer","Insulation Layer"],Navigation:["GPS","Altimeter"]},
+      Camping:{Shelter:["Tent","Bivy","Tarp"],Sleep:["Sleeping Bag","Sleeping Pad"],Cooking:["Stove","Cookset","Water Filter"],Carry:["Backpack","Dry Bag"],Lighting:["Headlamp","Lantern"]},
+      Skiing:{Footwear:["Boot","Ski","Binding","Snowboard"],Safety:["Helmet","Avalanche Beacon","Probe","Shovel","Airbag Pack"],Apparel:["Ski Jacket","Ski Pants","Gloves","Goggles"],Carry:["Ski Pack","Boot Bag"]}
+    }
+  }));
+  if(!items.length){
+    items=[
+      {gear_id:'GEAR-001',name:'Black Diamond Half Dome',brand:'Black Diamond',category:'Mountaineering',type:'Protection',subtype:'Helmet',model:'Half Dome',date_purchased:'2022-04-10',price:89,weight_g:395,size_color:'M/L',serial_cert:'CE EN12492',status:'active',photo_url:'',notes:'Minor scuff right side.'},
+      {gear_id:'GEAR-002',name:'MSR Hubba Hubba NX2',brand:'MSR',category:'Camping',type:'Shelter',subtype:'Tent',model:'Hubba Hubba NX',date_purchased:'2021-06-15',price:450,weight_g:1720,size_color:'2P',serial_cert:'',status:'active',photo_url:'',notes:'Seams need resealing.'},
+      {gear_id:'GEAR-003',name:'Salomon Shift Pro 130 AT',brand:'Salomon',category:'Skiing',type:'Footwear',subtype:'Boot',model:'Shift Pro 130',date_purchased:'2020-11-01',price:699,weight_g:1980,size_color:'27.5',serial_cert:'',status:'lent',photo_url:'',notes:'AT bindings compatible.'},
+      {gear_id:'GEAR-004',name:'Petzl Grigri+',brand:'Petzl',category:'Mountaineering',type:'Belay',subtype:'Belay Device',model:'Grigri+',date_purchased:'2023-01-20',price:110,weight_g:175,size_color:'',serial_cert:'CE EN15151',status:'active',photo_url:'',notes:''},
+      {gear_id:'GEAR-005',name:'Osprey Mutant 38',brand:'Osprey',category:'Mountaineering',type:'Carry',subtype:'Pack / Rucksack',model:'Mutant 38',date_purchased:'2021-03-05',price:220,weight_g:1150,size_color:'S/M',serial_cert:'',status:'active',photo_url:'',notes:''},
+      {gear_id:'GEAR-006',name:'MSR PocketRocket 2',brand:'MSR',category:'Camping',type:'Cooking',subtype:'Stove',model:'PocketRocket 2',date_purchased:'2022-08-18',price:55,weight_g:73,size_color:'',serial_cert:'',status:'active',photo_url:'',notes:''},
+      {gear_id:'GEAR-007',name:'Salomon S/Pro 120',brand:'Salomon',category:'Skiing',type:'Footwear',subtype:'Boot',model:'S/Pro 120',date_purchased:'2023-10-12',price:549,weight_g:1800,size_color:'28.5',serial_cert:'',status:'active',photo_url:'',notes:''},
+      {gear_id:'GEAR-008',name:'Black Diamond Raven Ice Axe',brand:'Black Diamond',category:'Mountaineering',type:'Protection',subtype:'Ice Axe',model:'Raven',date_purchased:'2020-02-14',price:75,weight_g:385,size_color:'60cm',serial_cert:'CE EN13089',status:'active',photo_url:'',notes:''},
+      {gear_id:'GEAR-009',name:'Mammut Barryvox S',brand:'Mammut',category:'Skiing',type:'Safety',subtype:'Avalanche Beacon',model:'Barryvox S',date_purchased:'2022-11-20',price:380,weight_g:255,size_color:'',serial_cert:'',status:'active',photo_url:'',notes:''},
+      {gear_id:'GEAR-010',name:'Therm-a-Rest NeoAir XLite',brand:'Osprey',category:'Camping',type:'Sleep',subtype:'Sleeping Pad',model:'NeoAir XLite',date_purchased:'2019-07-01',price:199,weight_g:340,size_color:'R',serial_cert:'',status:'retired',photo_url:'',notes:'Punctured beyond repair.'},
+    ];
+    lends=[{lend_id:'LEND-001',gear_id:'GEAR-003',gear_name:'Salomon Shift Pro 130 AT',lent_to:'Marek K.',date_lent:'2026-02-01',date_due:'2026-03-15',date_returned:'',condition_on_return:'',notes:''}];
+    saveLocal();
+  }
+}
+function saveLocal(){
+  localStorage.setItem('sg_items',JSON.stringify(items));
+  localStorage.setItem('sg_lends',JSON.stringify(lends));
+  localStorage.setItem('sg_trips',JSON.stringify(trips));
+  localStorage.setItem('sg_lookups',JSON.stringify(lookups));
+}
+
+// ════ API — Firebase Firestore ════
+firebase.initializeApp({
+  apiKey:"AIzaSyBbkyMxjjeLs5-tXh6U1PMoaBXOwhArMfc",
+  authDomain:"juodziaigear.firebaseapp.com",
+  projectId:"juodziaigear",
+  storageBucket:"juodziaigear.firebasestorage.app",
+  messagingSenderId:"489753380542",
+  appId:"1:489753380542:web:d8eb862afb2f05cfe080ef"
+});
+const _db=firebase.firestore();
+function getApiUrl(){return true;} // always connected
+function saveApiUrl(){}
+function saveAndConnect(){connectAndLoad();}
+async function api(action,body=null){return firestoreApi(action,body||{});}
+async function firestoreApi(action,body){
+  const FieldValue=firebase.firestore.FieldValue;
+  const gear =()=>_db.collection('gear');
+  const lends=()=>_db.collection('lends');
+  const trips=()=>_db.collection('trips');
+  const meta =(id)=>_db.collection('meta').doc(id);
+  const allDocs=(snap)=>snap.docs.map(d=>({...d.data()}));
+  const ts=()=>new Date().toISOString();
+  const newId=(pfx)=>pfx+'-'+Date.now().toString(36).toUpperCase();
+
+  switch(action){
+    // ── GEAR ──
+    case 'getGear':    return allDocs(await gear().get());
+    case 'addGear':{
+      const id=body.gear_id||newId('GEAR'); const now=ts();
+      const item={...body,gear_id:id,created_at:now,updated_at:now};
+      await gear().doc(id).set(item); return{gear_id:id};
+    }
+    case 'updateGear':{
+      const{gear_id,...fields}=body;
+      await gear().doc(gear_id).update({...fields,updated_at:ts()});
+      return{updated:gear_id};
+    }
+    case 'deleteGear':{
+      await gear().doc(body.gear_id).delete();
+      const ls=await lends().where('gear_id','==',body.gear_id).get();
+      await Promise.all(ls.docs.map(d=>d.ref.delete()));
+      return{deleted:body.gear_id};
+    }
+    // ── LENDS ──
+    case 'getLends':   return allDocs(await lends().get());
+    case 'addLend':{
+      const id=newId('LEND');
+      await lends().doc(id).set({...body,lend_id:id,date_returned:'',condition_on_return:''});
+      await gear().doc(body.gear_id).update({status:'lent',updated_at:ts()});
+      return{lend_id:id};
+    }
+    case 'returnGear':
+      await lends().doc(body.lend_id).update({date_returned:body.date_returned,condition_on_return:body.condition_on_return||''});
+      await gear().doc(body.gear_id).update({status:'active',updated_at:ts()});
+      return{returned:body.lend_id};
+    // ── TRIPS ──
+    case 'getTrips':   return allDocs(await trips().get());
+    case 'addTrip':{
+      const id=body.trip_id||newId('TRIP'); const now=ts();
+      await trips().doc(id).set({...body,trip_id:id,created_at:now,updated_at:now});
+      return{trip_id:id};
+    }
+    case 'updateTrip':{
+      const{trip_id,...fields}=body;
+      await trips().doc(trip_id).update({...fields,updated_at:ts()});
+      return{updated:trip_id};
+    }
+    case 'deleteTrip':
+      await trips().doc(body.trip_id).delete(); return{deleted:body.trip_id};
+    // ── LOOKUPS ──
+    case 'getLookups':{
+      const[bSnap,hSnap]=await Promise.all([meta('brands').get(),meta('hierarchy').get()]);
+      return{brands:bSnap.exists?(bSnap.data().items||[]):[],hierarchy:hSnap.exists?hSnap.data():{}};
+    }
+    case 'addBrand':
+      await meta('brands').update({items:FieldValue.arrayUnion(body.brand)});
+      return{added_brand:body.brand};
+    case 'addCategory':{
+      const h=await meta('hierarchy').get();
+      const d=h.exists?h.data():{};
+      if(!d[body.category]) d[body.category]={};
+      await meta('hierarchy').set(d); return{added_category:body.category};
+    }
+    case 'addCategoryType':{
+      const h=await meta('hierarchy').get();
+      const d=h.exists?h.data():{};
+      if(!d[body.category]) d[body.category]={};
+      if(!d[body.category][body.type]) d[body.category][body.type]=[];
+      if(body.subtype&&!d[body.category][body.type].includes(body.subtype)) d[body.category][body.type].push(body.subtype);
+      await meta('hierarchy').set(d); return{added:body};
+    }
+    case 'renameCategory':{
+      const h=await meta('hierarchy').get(); const d=h.exists?h.data():{};
+      d[body.newName]=d[body.oldName]; delete d[body.oldName];
+      await meta('hierarchy').set(d);
+      const gs=await gear().where('category','==',body.oldName).get();
+      await Promise.all(gs.docs.map(doc=>doc.ref.update({category:body.newName})));
+      return{renamed:body};
+    }
+    case 'renameBrand':
+      await meta('brands').update({items:FieldValue.arrayRemove(body.oldName)});
+      await meta('brands').update({items:FieldValue.arrayUnion(body.newName)});
+      return{renamed:body};
+    case 'renameType':{
+      const h=await meta('hierarchy').get(); const d=h.exists?h.data():{};
+      if(d[body.category]){d[body.category][body.newName]=d[body.category][body.oldName];delete d[body.category][body.oldName];}
+      await meta('hierarchy').set(d); return{renamed:body};
+    }
+    case 'renameSubtype':{
+      const h=await meta('hierarchy').get(); const d=h.exists?h.data():{};
+      const subs=d[body.category]?.[body.type]||[];
+      const idx=subs.indexOf(body.oldName); if(idx>=0) subs[idx]=body.newName;
+      await meta('hierarchy').set(d); return{renamed:body};
+    }
+    case 'removeSubtype':{
+      const h=await meta('hierarchy').get(); const d=h.exists?h.data():{};
+      if(d[body.category]?.[body.type]) d[body.category][body.type]=d[body.category][body.type].filter(s=>s!==body.subtype);
+      await meta('hierarchy').set(d); return{removed:body};
+    }
+    default: throw new Error('Unknown action: '+action);
+  }
+}
+function normalizeItem(i){
+  ['date_purchased','date_produced'].forEach(f=>{if(i[f]) i[f]=fmtDate(i[f]);});
+  return i;
+}
+function normalizeLend(l){
+  ['date_lent','date_due','date_returned'].forEach(f=>{if(l[f]) l[f]=fmtDate(l[f]);});
+  return l;
+}
+function normalizeTrip(t){
+  ['start_date','end_date'].forEach(f=>{if(t[f]) t[f]=fmtDate(t[f]);});
+  return t;
+}
+async function connectAndLoad(){
+  setConnStatus('loading','Connecting to Firebase...');
+  try{
+    const[rawLookups,rawItems,rawLends,rawTrips]=await Promise.all([
+      api('getLookups'),api('getGear'),api('getLends'),api('getTrips').catch(()=>[])
+    ]);
+    lookups=rawLookups;
+    items=rawItems.map(normalizeItem);
+    lends=rawLends.map(normalizeLend);
+    trips=rawTrips.map(normalizeTrip);
+    saveLocal();
+    setConnStatus('connected','Firebase — '+items.length+' items');
+    updateBadges(); renderAll(); renderLookupUI();
+  }catch(e){
+    setConnStatus('error','Firebase error: '+e.message+' — using local data');
+    toast('Using local data ('+e.message+')',4000);
+  }
+}
+function setConnStatus(state,msg){
+  const dot=document.getElementById('connDot');
+  dot.className='conn-dot '+(state==='connected'?'connected':state==='loading'?'loading':'error');
+  document.getElementById('connLabel').textContent=msg;
+}
+
+// ════ VIEW/SORT/SECTION ════
+function setView(v){
+  curView=v;
+  document.getElementById('vCard').classList.toggle('active',v==='card');
+  document.getElementById('vTable').classList.toggle('active',v==='table');
+  renderAll();
+}
+function sortBy(col){
+  if(sortCol===col) sortAsc=!sortAsc; else{sortCol=col;sortAsc=true;}
+  document.querySelectorAll('.sort-arrow').forEach(el=>el.textContent='');
+  const el=document.getElementById('sa-'+col);
+  if(el) el.textContent=sortAsc?'▲':'▼';
+  renderAll();
+}
+function applySorted(arr){
+  return [...arr].sort((a,b)=>{
+    const va=(a[sortCol]||'').toString().toLowerCase();
+    const vb=(b[sortCol]||'').toString().toLowerCase();
+    const primary=sortAsc?va.localeCompare(vb):vb.localeCompare(va);
+    if(primary!==0||sortCol==='name') return primary;
+    return (a.name||'').toLowerCase().localeCompare((b.name||'').toLowerCase());
+  });
+}
+function showSec(name){
+  curSection=name;
+  document.querySelectorAll('[id^="sec-"]').forEach(el=>el.classList.toggle('sec-hidden',el.id!=='sec-'+name));
+  document.querySelectorAll('.sidebar-item').forEach((el,i)=>el.classList.toggle('active',SECTIONS[i]===name));
+  document.querySelectorAll('.mnav-item').forEach(el=>el.classList.toggle('active',el.dataset.sec===name));
+  if(window.innerWidth<=900) closeSidebar();
+  if(name==='settings') renderLookupUI();
+  else if(name==='statistics') renderStatistics();
+  else if(name==='inspection') renderInspection();
+  else if(name==='trips'){ updateTripStatuses(); renderTrips(); }
+  else renderAll();
+  const fab=document.getElementById('fab');
+  if(fab) fab.style.display=name==='all'?'flex':'none';
+}
+
+// ════ DATA HELPERS ════
+function getFiltered(){
+  const s=(document.getElementById('searchInput')?.value||'').toLowerCase();
+  const cat=document.getElementById('fCat')?.value||'';
+  const typ=document.getElementById('filterType')?.value||'';
+  const sub=document.getElementById('filterSubtype')?.value||'';
+  const brand=document.getElementById('filterBrand')?.value||'';
+  const prodYear=document.getElementById('fProdYear')?.value||'';
+  const st=document.getElementById('fSt')?.value||'';
+  const activeCount=[cat,typ,sub,brand,prodYear,st].filter(Boolean).length;
+  const cb=document.getElementById('clearFiltersBtn');
+  if(cb) cb.style.display=activeCount?'':'none';
+  const fc=document.getElementById('filterCount');
+  if(fc){fc.textContent=activeCount;fc.style.display=activeCount?'':'none';}
+  return items.filter(i=>{
+    if(s&&!`${i.name} ${i.brand} ${i.type} ${i.subtype} ${i.model}`.toLowerCase().includes(s)) return false;
+    if(cat&&i.category.toLowerCase()!==cat.toLowerCase()) return false;
+    if(typ&&(i.type||'')!==typ) return false;
+    if(sub&&(i.subtype||'')!==sub) return false;
+    if(brand&&(i.brand||'')!==brand) return false;
+    if(prodYear&&(i.date_produced||'').substring(0,4)!==prodYear) return false;
+    if(st==='active') return i.status==='active'&&!activeTrip(i.gear_id);
+    if(st==='in_trip') return !!activeTrip(i.gear_id);
+    if(st==='lent') return i.status==='lent';
+    if(st==='retired') return i.status==='retired';
+    if(st==='all') return true;
+    return i.status!=='retired';
+  });
+}
+function toggleFilters(){
+  const panel=document.getElementById('filtersRow');
+  const btn=document.getElementById('filterToggleBtn');
+  const open=panel.style.display!=='none';
+  panel.style.display=open?'none':'';
+  btn.classList.toggle('open',!open);
+}
+function onFilterCatChange(){
+  const cat=document.getElementById('fCat').value;
+  const ts=document.getElementById('filterType');
+  const ss=document.getElementById('filterSubtype');
+  ts.innerHTML='<option value="">All Types</option>';
+  ss.innerHTML='<option value="">All Subtypes</option>';
+  if(cat&&lookups.hierarchy[cat]){
+    Object.keys(lookups.hierarchy[cat]).forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;ts.appendChild(o);});
+  } else {
+    const allTypes=[...new Set(items.map(i=>i.type).filter(Boolean))].sort();
+    allTypes.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;ts.appendChild(o);});
+  }
+  renderAll();
+}
+function onFilterTypeChange(){
+  const cat=document.getElementById('fCat').value;
+  const typ=document.getElementById('filterType').value;
+  const ss=document.getElementById('filterSubtype');
+  ss.innerHTML='<option value="">All Subtypes</option>';
+  let subs=[];
+  if(cat&&typ&&lookups.hierarchy[cat]&&lookups.hierarchy[cat][typ]){
+    subs=lookups.hierarchy[cat][typ];
+  } else if(typ){
+    subs=[...new Set(items.filter(i=>i.type===typ).map(i=>i.subtype).filter(Boolean))].sort();
+  } else {
+    subs=[...new Set(items.map(i=>i.subtype).filter(Boolean))].sort();
+  }
+  subs.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;ss.appendChild(o);});
+  renderAll();
+}
+function openGlobalSearch(){
+  showSec('all');
+  const s=document.getElementById('searchInput');
+  if(s){s.focus();s.select();}
+}
+function clearFilters(){
+  ['fCat','filterType','filterSubtype','filterBrand','fProdYear','fSt'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('searchInput').value='';
+  onFilterCatChange();
+  renderAll();
+}
+function populateFilterDropdowns(){
+  populateCategoryDropdowns();
+  const fb=document.getElementById('filterBrand'); if(!fb) return;
+  const curBrand=fb.value;
+  fb.innerHTML='<option value="">All Brands</option>';
+  [...new Set(items.map(i=>i.brand).filter(Boolean))].sort().forEach(b=>{const o=document.createElement('option');o.value=b;o.textContent=b;if(b===curBrand)o.selected=true;fb.appendChild(o);});
+  const fy=document.getElementById('fProdYear');
+  const curYear=fy.value;
+  fy.innerHTML='<option value="">All Prod. Years</option>';
+  [...new Set(items.map(i=>i.date_produced?String(i.date_produced).substring(0,4):null).filter(Boolean))].sort().reverse().forEach(y=>{const o=document.createElement('option');o.value=y;o.textContent=y;if(y===curYear)o.selected=true;fy.appendChild(o);});
+  const ft=document.getElementById('filterType');
+  const curType=ft.value;
+  const cat=document.getElementById('fCat').value;
+  ft.innerHTML='<option value="">All Types</option>';
+  ft.disabled=false;
+  const types=cat&&lookups.hierarchy[cat]?Object.keys(lookups.hierarchy[cat]):[...new Set(items.map(i=>i.type).filter(Boolean))];
+  types.sort().forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;if(t===curType)o.selected=true;ft.appendChild(o);});
+  const fs=document.getElementById('filterSubtype');
+  const curSub=fs.value;
+  fs.innerHTML='<option value="">All Subtypes</option>';
+  fs.disabled=false;
+  let subs=[];
+  if(cat&&curType&&lookups.hierarchy[cat]&&lookups.hierarchy[cat][curType]){subs=lookups.hierarchy[cat][curType];}
+  else if(curType){subs=[...new Set(items.filter(i=>i.type===curType).map(i=>i.subtype).filter(Boolean))].sort();}
+  else if(cat){subs=[...new Set(items.filter(i=>i.category===cat).map(i=>i.subtype).filter(Boolean))].sort();}
+  else{subs=[...new Set(items.map(i=>i.subtype).filter(Boolean))].sort();}
+  subs.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;if(s===curSub)o.selected=true;fs.appendChild(o);});
+}
+function currentLend(gear_id){return lends.find(l=>l.gear_id===gear_id&&!l.date_returned);}
+
+// ════ CARD HTML ════
+function cardHTML(item){
+  const emoji=CAT_EMOJI[item.category]||'🎒';
+  const lend=currentLend(item.gear_id);
+  const safePhoto=safeUrl(item.photo_url);
+  const photo=safePhoto?`<div class="card-photo"><img src="${safePhoto}" alt="" onerror="this.parentElement.innerHTML='${emoji}'"></div>`:`<div class="card-photo">${emoji}</div>`;
+  const lentRow=item.status==='lent'&&lend?`<div class="card-meta-row" style="color:var(--warn)">🤝 ${esc(lend.lent_to)}${lend.date_due?' · due '+esc(lend.date_due):''}</div>`:'';
+  return `<div class="gear-card ${item.status}" onclick="openDetail('${item.gear_id}')">
+    ${photo}<div class="card-body">
+    <div class="card-badges">
+      <span class="tag" style="${getCatTagStyle(item.category)}">${item.category}</span>
+      ${item.type?`<span class="tag tag-muted">${item.type}</span>`:''}
+      ${item.subtype?`<span class="tag tag-muted">${item.subtype}</span>`:''}
+      ${item.status==='lent'?'<span class="tag tag-lent">Lent</span>':''}
+      ${item.status==='retired'?'<span class="tag tag-retired">Retired</span>':''}
+      ${activeTrip(item.gear_id)?'<span class="tag tag-in_trip">In Trip</span>':''}
+    </div>
+    <div class="card-name">${esc(item.name)}</div>
+    <div class="card-brand">${esc(item.brand)}${item.model?' · '+esc(item.model):''}</div>
+    <div class="card-meta">${item.date_purchased?`<div class="card-meta-row">Bought: <strong>${item.date_purchased}</strong></div>`:''}${lentRow}</div>
+    <div class="card-actions" onclick="event.stopPropagation()">
+      <button class="btn btn-ghost btn-sm icon-btn" onclick="openEdit('${item.gear_id}')" title="Edit">&#9998;</button>
+      <button class="btn btn-ghost btn-sm icon-btn" onclick="duplicateItem('${item.gear_id}')" title="Duplicate">&#10697;</button>
+      ${item.status==='lent'?`<button class="btn btn-warn btn-sm icon-btn" onclick="openReturn('${item.gear_id}')" title="Mark Returned">&#8601;</button>`:`<button class="btn btn-ghost btn-sm icon-btn" onclick="quickLend('${item.gear_id}')" title="Lend">&#8599;</button>`}
+      <button class="btn btn-danger btn-sm icon-btn" onclick="deleteItem('${item.gear_id}')" title="Delete">&#10005;</button>
+    </div></div></div>`;
+}
+
+// ════ TABLE ROW ════
+function tableRowHTML(item,cols){
+  const emoji=CAT_EMOJI[item.category]||'🎒';
+  const lend=currentLend(item.gear_id);
+  const safePhoto=safeUrl(item.photo_url);
+  const photo=`<td><div style="display:flex;align-items:center;gap:4px"><span style="width:14px;flex-shrink:0"></span><div class="td-photo">${safePhoto?`<img src="${safePhoto}" onerror="this.parentElement.innerHTML='${emoji}'" alt="">`:emoji}</div></div></td>`;
+  const inTrip=activeTrip(item.gear_id);
+  const statusBadge=item.status==='lent'?`<span class="tag tag-lent">Lent${lend?.lent_to?' · '+esc(lend.lent_to):''}</span>`
+    :item.status==='retired'?'<span class="tag tag-retired">Retired</span>'
+    :inTrip?'<span class="tag tag-in_trip">In Trip</span>'
+    :'<span class="tag tag-camping">Active</span>';
+  const rowCls=item.status==='lent'?'lent-row':item.status==='retired'?'retired-row':'';
+  const defs={
+    photo,
+    name:`<td class="td-name" onclick="openDetail('${item.gear_id}')">${esc(item.name)}<small>${esc(item.brand)}${item.model?' · '+esc(item.model):''}</small></td>`,
+    brand:`<td>${esc(item.brand)||'—'}</td>`,
+    category:`<td><span class="tag" style="${getCatTagStyle(item.category)}">${item.category}</span></td>`,
+    type:`<td>${esc(item.type)||'—'}</td>`,
+    subtype:`<td>${esc(item.subtype)||'—'}</td>`,
+    date_purchased:`<td>${item.date_purchased||'—'}</td>`,
+    date_produced:`<td>${item.date_produced||'—'}</td>`,
+    status:`<td>${statusBadge}</td>`,
+    retire_reason:`<td>${(()=>{const m=(item.notes||'').match(/^\[Retired:\s*([^\]]+)\]/);return m?`<span class="tag tag-retired">${esc(m[1])}</span>`:'—';})()}</td>`,
+    actions:`<td><div class="td-actions"><button class="btn btn-ghost btn-sm icon-btn" onclick="openEdit('${item.gear_id}')" title="Edit">&#9998;</button><button class="btn btn-ghost btn-sm" onclick="duplicateItem('${item.gear_id}')" title="Duplicate">&#10064;</button>${item.status==='lent'?`<button class="btn btn-warn btn-sm icon-btn" onclick="openReturn('${item.gear_id}')" title="Mark Returned">&#8601;</button>`:`<button class="btn btn-ghost btn-sm icon-btn" onclick="quickLend('${item.gear_id}')" title="Lend">&#8599;</button>`}<button class="btn btn-danger btn-sm icon-btn" onclick="deleteItem('${item.gear_id}')" title="Delete">&#10005;</button></div></td>`
+  };
+  return `<tr class="${rowCls}">${cols.map(c=>defs[c]||'').join('')}</tr>`;
+}
+function emptyHTML(icon,title,sub){return`<div class="empty-state"><div class="empty-icon">${icon}</div><div class="empty-title">${title}</div><p>${sub}</p></div>`;}
+function emptyRow(span,msg){return`<tr><td colspan="${span}" style="text-align:center;padding:36px;color:var(--muted)">${msg}</td></tr>`;}
+
+
+// ════ GROUPING ════
+function groupKey(i){return [i.name,i.brand,i.category,i.type,i.subtype].join('||');}
+function groupItems(arr){
+  const map=new Map();
+  arr.forEach(i=>{
+    const k=groupKey(i);
+    if(!map.has(k)) map.set(k,[]);
+    map.get(k).push(i);
+  });
+  return [...map.values()];
+}
+function tableRowGroupedHTML(group, cols){
+  if(group.length===1) return tableRowHTML(group[0], cols);
+  const rep=group[0]; // representative item
+  const gid='grp-'+rep.gear_id;
+  const emoji=CAT_EMOJI[rep.category]||'🎒';
+  const safePhoto=safeUrl(rep.photo_url);
+  const photoInner=safePhoto?`<img src="${safePhoto}" onerror="this.parentElement.innerHTML='${emoji}'" alt="">`:emoji;
+  const statusCounts={active:0,lent:0,retired:0,in_trip:0};
+  group.forEach(i=>{
+    if(i.status==='lent') statusCounts.lent++;
+    else if(i.status==='retired') statusCounts.retired++;
+    else if(activeTrip(i.gear_id)) statusCounts.in_trip++;
+    else statusCounts.active++;
+  });
+  const statusBadge=[
+    statusCounts.active?`<span class="tag tag-camping">${statusCounts.active} active</span>`:'',
+    statusCounts.in_trip?`<span class="tag tag-in_trip">${statusCounts.in_trip} in trip</span>`:'',
+    statusCounts.lent?`<span class="tag tag-lent">${statusCounts.lent} lent</span>`:'',
+    statusCounts.retired?`<span class="tag tag-retired">${statusCounts.retired} retired</span>`:'',
+  ].filter(Boolean).join('<br style="line-height:6px">');
+  // Build header row
+  const defs={
+    photo:`<td><div style="display:flex;align-items:center;gap:4px"><span class="group-toggle" style="width:14px;flex-shrink:0">▶</span><div class="td-photo">${photoInner}</div></div></td>`,
+    name:`<td class="td-name"><span class="group-count">${group.length}</span>${esc(rep.name)}<small>${esc(rep.brand)}${rep.model?' · '+esc(rep.model):''}</small></td>`,
+    brand:`<td>${esc(rep.brand)||'—'}</td>`,
+    category:`<td><span class="tag" style="${getCatTagStyle(rep.category)}">${rep.category}</span></td>`,
+    type:`<td>${rep.type||'—'}</td>`,
+    subtype:`<td>${rep.subtype||'—'}</td>`,
+    date_purchased:`<td>—</td>`,
+    date_produced:`<td>—</td>`,
+    status:`<td>${statusBadge}</td>`,
+    actions:`<td></td>`
+  };
+  const headerRow=`<tr class="group-row" id="${gid}" onclick="toggleGroup('${gid}')">${cols.map(c=>defs[c]||'').join('')}</tr>`;
+  // Build sub-rows
+  const subRows=group.map(item=>{
+    const r=tableRowHTML(item,cols);
+    // Add sub-row class and hidden class, indent name cell
+    return r
+      .replace('<tr class="','<tr class="sub-row hidden ')
+      .replace('<tr class=""','<tr class="sub-row hidden"')
+      .replace('class="td-name"','class="td-name sub-indent"');
+  }).join('');
+  return headerRow+subRows;
+}
+function toggleGroup(gid){
+  const header=document.getElementById(gid);
+  if(!header) return;
+  const isOpen=header.classList.toggle('open');
+  let el=header.nextElementSibling;
+  while(el&&el.classList.contains('sub-row')){
+    el.classList.toggle('hidden',!isOpen);
+    el=el.nextElementSibling;
+  }
+}
+
+function toggleLentGroup(gid){
+  const header=document.getElementById(gid);
+  if(!header) return;
+  const isOpen=header.classList.toggle('open');
+  let el=header.nextElementSibling;
+  while(el&&el.classList.contains('lent-sub-row')){
+    el.classList.toggle('hidden',!isOpen);
+    el=el.nextElementSibling;
+  }
+}
+
+// ════ RENDER ALL ════
+function renderAll(){
+  updateBadges();
+  populateFilterDropdowns();
+  const isc=curView==='card';
+  const filtered=applySorted(getFiltered());
+  document.getElementById('allCard').style.display=isc?'':'none';
+  document.getElementById('allTable').style.display=isc?'none':'';
+  if(isc) document.getElementById('allCard').innerHTML=filtered.length?filtered.map(cardHTML).join(''):emptyHTML('🏔','No gear found','Add your first item or adjust filters');
+  else document.getElementById('allTbody').innerHTML=filtered.length?groupItems(filtered).map(g=>tableRowGroupedHTML(g,['photo','name','brand','category','type','subtype','date_purchased','date_produced','status','actions'])).join(''):emptyRow(9,'No items');
+
+  const ret=applySorted(items.filter(i=>i.status==='retired'));
+  document.getElementById('retiredCard').style.display=isc?'':'none';
+  document.getElementById('retiredTable').style.display=isc?'none':'';
+  if(isc) document.getElementById('retiredCard').innerHTML=ret.length?ret.map(cardHTML).join(''):emptyHTML('📦','No retired gear','');
+  else document.getElementById('retiredTbody').innerHTML=ret.length?ret.map(i=>tableRowHTML(i,['photo','name','brand','category','type','retire_reason','date_purchased','date_produced','actions'])).join(''):emptyRow(8,'No retired items');
+  renderLent();
+}
+function renderLent(){
+  const lentItems=items.filter(i=>i.status==='lent');
+  const today=new Date().toISOString().slice(0,10);
+  // ── Active lends ──
+  if(!lentItems.length){
+    document.getElementById('lentContent').innerHTML=emptyHTML('🤝','Nothing lent out','All your gear is home safe');
+  } else {
+    // Group by lent_to
+    const groups=new Map();
+    lentItems.forEach(i=>{
+      const lend=currentLend(i.gear_id)||{};
+      const person=lend.lent_to||'—';
+      if(!groups.has(person)) groups.set(person,[]);
+      groups.get(person).push({item:i,lend});
+    });
+    let rows='';
+    let idx=0;
+    for(const [person,entries] of groups){
+      const dates=entries.map(e=>e.lend.date_lent).filter(Boolean).sort();
+      const minDateLent=dates[0]||'—';
+      const dues=entries.map(e=>e.lend.date_due).filter(Boolean).sort();
+      const maxDateDue=dues[dues.length-1]||'—';
+      const gid='lg-'+idx++;
+      rows+=`<tr class="lent-group-header" id="${gid}" onclick="toggleLentGroup('${gid}')"><td colspan="6"><span class="group-toggle">▶</span>${esc(person)}<span class="group-count">${entries.length}</span><span class="lent-grp-meta">Lent: ${esc(minDateLent)}</span><span class="lent-grp-meta">Return by: ${esc(maxDateDue)}</span></td></tr>`;
+      entries.forEach(({item:i,lend})=>{
+        const overdue=lend.date_due&&lend.date_due<today;
+        rows+=`<tr class="lent-sub-row hidden">
+          <td><div class="td-photo">${CAT_EMOJI[i.category]||'🎒'}</div></td>
+          <td class="td-name" onclick="openDetail('${i.gear_id}')" style="cursor:pointer">${esc(i.name)}<small>${esc(i.brand)}</small></td>
+          <td>${esc(lend.date_lent)||'—'}</td>
+          <td style="color:${overdue?'var(--danger)':'var(--text)'};font-weight:${overdue?700:400}">${esc(lend.date_due)||'—'}${overdue?' ⚠':''}</td>
+          <td>${esc(lend.notes)||'—'}</td>
+          <td><button class="btn btn-warn btn-sm icon-btn" onclick="openReturn('${i.gear_id}')" title="Mark Returned">&#8601; Return</button></td>
+        </tr>`;
+      });
+    }
+    document.getElementById('lentContent').innerHTML=`<div class="ltw"><table class="lent-table">
+      <thead><tr>
+        <th style="width:48px"></th>
+        <th>Item</th><th>Date Lent</th><th>Return By</th><th>Notes</th><th>Action</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+  }
+  // ── History (returned lends) ──
+  renderLentHistory();
+}
+function renderLentHistory(){
+  const returned=lends.filter(l=>l.date_returned);
+  const histEl=document.getElementById('lentHistoryContent');
+  if(!histEl) return;
+  if(!returned.length){
+    histEl.innerHTML=`<div style="text-align:center;padding:24px;color:var(--muted)">No lending history yet</div>`;
+    return;
+  }
+  // Sort newest return first
+  const sorted=[...returned].sort((a,b)=>(b.date_returned||'').localeCompare(a.date_returned||''));
+  const rows=sorted.map(l=>{
+    const item=items.find(i=>i.gear_id===l.gear_id);
+    const name=item?item.name:l.gear_name||'Unknown';
+    const brand=item?item.brand:'';
+    const cat=item?item.category:'';
+    const emoji=item?(CAT_EMOJI[cat]||'🎒'):'🎒';
+    const duration=l.date_lent&&l.date_returned?Math.round((new Date(l.date_returned)-new Date(l.date_lent))/(1000*60*60*24))+'d':'—';
+    return`<tr>
+      <td><div class="td-photo">${emoji}</div></td>
+      <td class="td-name" onclick="${item?`openDetail('${l.gear_id}')`:'void(0)'}" style="cursor:${item?'pointer':'default'}">${esc(name)}<small>${esc(brand)}</small></td>
+      <td>${esc(l.lent_to)||'—'}</td>
+      <td>${l.date_lent||'—'}</td>
+      <td>${l.date_returned||'—'}</td>
+      <td>${duration}</td>
+      <td>${esc(l.condition_on_return)||'—'}</td>
+      <td>${esc(l.notes)||'—'}</td>
+    </tr>`;
+  }).join('');
+  histEl.innerHTML=`<div class="ltw"><table class="lent-table">
+    <thead><tr>
+      <th style="width:48px"></th>
+      <th>Item</th><th>Lent To</th><th>Date Lent</th><th>Date Returned</th><th>Duration</th><th>Condition</th><th>Notes</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+}
+function toggleLentHistory(){
+  const body=document.getElementById('lentHistoryBody');
+  const icon=document.getElementById('lentHistoryToggleIcon');
+  const label=document.getElementById('lentHistoryToggleLabel');
+  const isOpen=body.classList.toggle('open');
+  icon.textContent=isOpen?'▲':'▼';
+  label.textContent=isOpen?'Hide':'Show';
+}
+function updateBadges(){
+  const active=items.filter(i=>i.status!=='retired');
+  document.getElementById('b-all').textContent=active.length;
+  document.getElementById('b-lent').textContent=items.filter(i=>i.status==='lent').length;
+  document.getElementById('b-retired').textContent=items.filter(i=>i.status==='retired').length;
+  document.getElementById('st-total').textContent=active.length;
+  document.getElementById('st-lent').textContent=items.filter(i=>i.status==='lent').length;
+  document.getElementById('st-retired').textContent=items.filter(i=>i.status==='retired').length;
+  document.getElementById('st-brands').textContent=new Set(items.map(i=>i.brand).filter(Boolean)).size;
+  const lc=items.filter(i=>i.status==='lent').length;
+  const mb=document.getElementById('mb-lent');
+  if(mb){mb.textContent=lc;mb.style.display=lc?'':'none';}
+  const tc=trips.filter(t=>t.status==='in_progress').length;
+  const bt=document.getElementById('b-trips');
+  if(bt) bt.textContent=tc||'';
+  const mbt=document.getElementById('mb-trips');
+  if(mbt){mbt.textContent=tc;mbt.style.display=tc?'':'none';}
+}
+
+// ════ TRIPS ════
+function updateTripStatuses(){
+  const today=new Date().toISOString().slice(0,10);
+  const changed=[];
+  trips.forEach(t=>{
+    if(t.status==='ended') return;
+    const newStatus=today<t.start_date?'planned':today<=t.end_date?'in_progress':'ended';
+    if(t.status!==newStatus){t.status=newStatus;changed.push(t);}
+  });
+  if(changed.length){
+    saveLocal();
+    if(getApiUrl()) changed.forEach(t=>api('updateTrip',t).catch(()=>{}));
+  }
+}
+function activeTrip(gear_id){
+  return trips.find(t=>t.status==='in_progress'&&t.gear_ids.includes(gear_id))||null;
+}
+function isItemInTripDuring(gear_id,start,end,exclude_id=null){
+  return trips.some(t=>{
+    if(t.trip_id===exclude_id) return false;
+    if(!t.gear_ids.includes(gear_id)) return false;
+    return t.start_date<=end&&t.end_date>=start;
+  });
+}
+function isItemLentDuring(gear_id,start,end){
+  return lends.some(l=>{
+    if(l.gear_id!==gear_id) return false;
+    if(l.date_returned) return false;
+    // open lend: from date_lent onward — overlaps if date_lent <= end
+    return l.date_lent<=end;
+  });
+}
+function renderTrips(){
+  const el=document.getElementById('tripsContent');
+  if(!el) return;
+  if(!trips.length){el.innerHTML='<div style="padding:40px;text-align:center;color:var(--muted)">No trips yet. Create your first trip.</div>';return;}
+  const statusOrder={in_progress:0,planned:1,ended:2};
+  const sorted=[...trips].sort((a,b)=>(statusOrder[a.status]??9)-(statusOrder[b.status]??9)||a.start_date.localeCompare(b.start_date));
+  el.innerHTML='<div class="trips-grid">'+sorted.map(t=>{
+    const gCount=t.gear_ids.length;
+    const totalW=t.gear_ids.reduce((s,id)=>{const item=items.find(i=>i.gear_id===id);return s+(parseFloat(item?.weight_g)||0);},0);
+    const wStr=totalW?fmtWeight(totalW):'—';
+    const statusLabel={planned:'Planned',in_progress:'In Progress',ended:'Ended'}[t.status]||t.status;
+    const tagClass={planned:'tag-planned',in_progress:'tag-in_progress',ended:'tag-ended'}[t.status]||'';
+    return `<div class="trip-card" onclick="openTripDetail('${esc(t.trip_id)}')">
+      <div class="trip-card-header">
+        <div class="trip-card-name">${esc(t.name)}</div>
+        <span class="tag ${tagClass}">${statusLabel}</span>
+      </div>
+      <div class="trip-card-dates">${esc(t.start_date)} – ${esc(t.end_date)}</div>
+      <div class="trip-card-stats">
+        <span><strong>${gCount}</strong> items</span>
+        <span><strong>${wStr}</strong> total</span>
+      </div>
+      ${t.notes?`<div style="font-size:12px;color:var(--muted);margin-top:4px">${esc(t.notes)}</div>`:''}
+    </div>`;
+  }).join('')+'</div>';
+}
+function openTripDetail(id){
+  currentTripId=id;
+  document.getElementById('trips-list-view').style.display='none';
+  document.getElementById('trips-detail-view').style.display='';
+  renderTripDetail(id);
+}
+function renderTripDetail(id){
+  const t=trips.find(x=>x.trip_id===id);
+  if(!t) return;
+  const titleEl=document.getElementById('tripDetailTitle');
+  titleEl.textContent=t.name;
+  const actEl=document.getElementById('tripDetailActions');
+  const statusLabel={planned:'Planned',in_progress:'In Progress',ended:'Ended'}[t.status]||t.status;
+  const tagClass={planned:'tag-planned',in_progress:'tag-in_progress',ended:'tag-ended'}[t.status]||'';
+  let actBtns=`<span class="tag ${tagClass}">${statusLabel}</span>`;
+  actBtns+=`<button class="btn btn-ghost btn-sm" onclick="openEditTrip('${esc(id)}')">Edit</button>`;
+  actBtns+=`<button class="btn btn-ghost btn-sm" onclick="duplicateTrip('${esc(id)}')">⧉ Copy</button>`;
+  actBtns+=`<button class="btn btn-ghost btn-sm" onclick="printTripList('${esc(id)}')">🖨 Print</button>`;
+  actBtns+=`<button class="btn ${_packingMode?'btn-primary':'btn-ghost'} btn-sm" onclick="togglePackingMode('${esc(id)}')">${_packingMode?'✓ Packing':'Pack'}</button>`;
+  if(t.status!=='ended') actBtns+=`<button class="btn btn-ghost btn-sm" onclick="endTrip('${esc(id)}')">End Trip</button>`;
+  actBtns+=`<button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteTrip('${esc(id)}')">Delete</button>`;
+  actEl.innerHTML=actBtns;
+  const gearItems=t.gear_ids.map(gid=>items.find(i=>i.gear_id===gid)).filter(Boolean);
+  gearItems.sort((a,b)=>(a.type||'').localeCompare(b.type||''));
+  const totalW=gearItems.reduce((s,i)=>s+(parseFloat(i.weight_g)||0),0);
+  let html=`<div class="trip-detail-stats">
+    <div class="trip-stat"><div class="trip-stat-val">${gearItems.length}</div><div class="trip-stat-lbl">Items</div></div>
+    <div class="trip-stat"><div class="trip-stat-val">${totalW?fmtWeight(totalW):'—'}</div><div class="trip-stat-lbl">Total Weight</div></div>
+    <div class="trip-stat"><div class="trip-stat-val" style="color:#444">${fmtTripDate(t.start_date)}</div><div class="trip-stat-lbl">Departs</div></div>
+    <div class="trip-stat"><div class="trip-stat-val" style="color:#444">${fmtTripDate(t.end_date)}</div><div class="trip-stat-lbl">Returns</div></div>
+  </div>`;
+  if(t.notes) html+=`<div style="margin-bottom:16px;padding:12px;background:var(--surface2);border-radius:8px;font-size:14px">${esc(t.notes)}</div>`;
+  html+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+    <div style="font-weight:600">Gear</div>
+    ${t.status!=='ended'?`<button class="btn btn-primary btn-sm" onclick="openTripItemPicker('${esc(id)}')">+ Add Items</button>`:''}
+  </div>`;
+  if(!gearItems.length){
+    html+='<div style="padding:20px;text-align:center;color:var(--muted);font-size:14px">No items added yet.</div>';
+  } else {
+    html+=`<div class="ltw"><table class="gtable trip-gear-gtable"><thead><tr>
+      <th style="width:62px"></th>
+      <th>Item</th>
+      <th>Type</th>
+      <th>Subtype</th>
+      <th>Weight</th>
+      <th style="width:40px"></th>
+    </tr></thead><tbody>`;
+    gearItems.forEach(item=>{
+      const emoji=CAT_EMOJI[item.category]||'🎒';
+      const safePhoto=safeUrl(item.photo_url);
+      const photoCell=safePhoto?`<img src="${safePhoto}" onerror="this.parentElement.innerHTML='${emoji}'" alt="">`:emoji;
+      const removeBtn=t.status!=='ended'?`<button class="btn btn-ghost btn-sm icon-btn" onclick="removeItemFromTrip('${esc(id)}','${esc(item.gear_id)}')" title="Remove">&#10005;</button>`:'';
+      const meta=[item.type,item.subtype,item.weight_g?fmtWeight(parseFloat(item.weight_g)):null].filter(Boolean).join(' · ');
+      const isChecked=!!_packingChecked[item.gear_id];
+      const firstCell=_packingMode
+        ?`<td onclick="togglePackItem('${esc(item.gear_id)}','${esc(id)}')" style="cursor:pointer;text-align:center;font-size:22px;user-select:none">${isChecked?'✅':'⬜'}</td>`
+        :`<td><div class="td-photo">${photoCell}</div></td>`;
+      html+=`<tr id="pkrow-${esc(item.gear_id)}"${isChecked?' class="pack-checked"':''}>
+        ${firstCell}
+        <td class="td-name" onclick="openDetail('${esc(item.gear_id)}')">${esc(item.name)}<small>${esc(item.brand||'')}</small><span class="tg-meta">${esc(meta||'—')}</span></td>
+        <td>${esc(item.type||'—')}</td>
+        <td style="color:var(--muted)">${esc(item.subtype||'—')}</td>
+        <td style="color:var(--muted)">${item.weight_g?fmtWeight(parseFloat(item.weight_g)):'—'}</td>
+        <td>${removeBtn}</td>
+      </tr>`;
+    });
+    html+='</tbody></table></div>';
+  }
+  document.getElementById('tripDetailContent').innerHTML=html;
+}
+function togglePackingMode(tripId){
+  _packingMode=!_packingMode;
+  if(!_packingMode) _packingChecked={};
+  renderTripDetail(tripId);
+}
+function togglePackItem(gearId,tripId){
+  _packingChecked[gearId]=!_packingChecked[gearId];
+  const row=document.getElementById('pkrow-'+gearId);
+  if(row){
+    row.classList.toggle('pack-checked',!!_packingChecked[gearId]);
+    row.firstElementChild.textContent=_packingChecked[gearId]?'✅':'⬜';
+  }
+}
+function backToTrips(){
+  _packingMode=false; _packingChecked={};
+  currentTripId=null;
+  document.getElementById('trips-detail-view').style.display='none';
+  document.getElementById('trips-list-view').style.display='';
+  renderTrips();
+}
+function openAddTrip(){
+  editingTripId=null;
+  document.getElementById('addTripTitle').textContent='New Trip';
+  document.getElementById('tripName').value='';
+  document.getElementById('tripStartDate').value='';
+  document.getElementById('tripEndDate').value='';
+  document.getElementById('tripNotes').value='';
+  document.getElementById('addTripOverlay').classList.add('open');
+}
+function openEditTrip(id){
+  const t=trips.find(x=>x.trip_id===id);
+  if(!t) return;
+  editingTripId=id;
+  document.getElementById('addTripTitle').textContent='Edit Trip';
+  document.getElementById('tripName').value=t.name;
+  document.getElementById('tripStartDate').value=t.start_date;
+  document.getElementById('tripEndDate').value=t.end_date;
+  document.getElementById('tripNotes').value=t.notes||'';
+  document.getElementById('addTripOverlay').classList.add('open');
+}
+function duplicateTrip(id){
+  const t=trips.find(x=>x.trip_id===id); if(!t) return;
+  _dupGearIds=[...t.gear_ids];
+  editingTripId=null;
+  document.getElementById('addTripTitle').textContent='Duplicate Trip';
+  document.getElementById('tripName').value='Copy of '+t.name;
+  document.getElementById('tripStartDate').value='';
+  document.getElementById('tripEndDate').value='';
+  document.getElementById('tripNotes').value=t.notes||'';
+  document.getElementById('addTripOverlay').classList.add('open');
+}
+function printTripList(tripId){
+  const t=trips.find(x=>x.trip_id===tripId); if(!t) return;
+  const gearItems=t.gear_ids.map(gid=>items.find(i=>i.gear_id===gid)).filter(Boolean);
+  gearItems.sort((a,b)=>(a.type||'').localeCompare(b.type||''));
+  const totalW=gearItems.reduce((s,i)=>s+(parseFloat(i.weight_g)||0),0);
+  const rows=gearItems.map(i=>`<tr><td>${esc(i.name)}</td><td>${esc(i.brand||'')}</td><td>${esc(i.type||'')}</td><td>${i.weight_g?fmtWeight(parseFloat(i.weight_g)):'—'}</td><td></td></tr>`).join('');
+  const html=`<html><head><title>${esc(t.name)}</title><style>body{font-family:sans-serif;padding:20px}h1{font-size:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:6px 10px;text-align:left;font-size:13px}th{background:#f0f0f0}tfoot td{font-weight:700}</style></head><body><h1>${esc(t.name)}</h1><p>${t.start_date||''}${t.end_date?' – '+t.end_date:''} &nbsp;·&nbsp; ${gearItems.length} items &nbsp;·&nbsp; ${totalW?fmtWeight(totalW):'—'}</p><table><thead><tr><th>Item</th><th>Brand</th><th>Type</th><th>Weight</th><th>✓</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><td colspan="3">Total</td><td>${fmtWeight(totalW)}</td><td></td></tr></tfoot></table></body></html>`;
+  const w=window.open('','_blank','width=700,height=600');
+  if(!w){toast('Pop-up blocked — allow pop-ups and try again');return;}
+  w.document.write(html); w.document.close(); w.print();
+}
+async function saveTrip(){
+  const name=document.getElementById('tripName').value.trim();
+  if(!name){toast('Trip name is required');return;}
+  const btn=document.getElementById('saveTripBtn');btn.disabled=true;btn.textContent='Saving...';
+  const start=document.getElementById('tripStartDate').value;
+  const end=document.getElementById('tripEndDate').value;
+  const notes=document.getElementById('tripNotes').value.trim();
+  if(start&&end&&end<start){toast('End date must be on or after start date');return;}
+  const today=new Date().toISOString().slice(0,10);
+  const status=!start||today<start?'planned':(!end||today<=end)?'in_progress':'ended';
+  if(editingTripId){
+    const t=trips.find(x=>x.trip_id===editingTripId);
+    if(!t) return;
+    Object.assign(t,{name,start_date:start,end_date:end,status,notes,updated_at:new Date().toISOString()});
+    try{ await api('updateTrip',t); }catch(e){toast('API: '+e.message);}
+  } else {
+    const t={trip_id:'TRIP-'+Date.now().toString(36).toUpperCase(),name,start_date:start,end_date:end,status,gear_ids:_dupGearIds?[..._dupGearIds]:[],notes,created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+    _dupGearIds=null;
+    trips.push(t);
+    try{ await api('addTrip',t); }catch(e){toast('API: '+e.message);}
+  }
+  btn.disabled=false;btn.textContent='Save Trip';
+  saveLocal();
+  closeModal('addTripOverlay');
+  updateBadges();
+  if(editingTripId&&currentTripId===editingTripId) renderTripDetail(editingTripId);
+  else renderTrips();
+  toast(editingTripId?'Trip updated':'Trip created');
+}
+async function deleteTrip(id){
+  if(!confirm('Delete this trip?')) return;
+  trips=trips.filter(t=>t.trip_id!==id);
+  try{ await api('deleteTrip',{trip_id:id}); }catch(e){toast('API: '+e.message);}
+  saveLocal();
+  updateBadges();
+  backToTrips();
+  toast('Trip deleted');
+}
+async function endTrip(id){
+  const t=trips.find(x=>x.trip_id===id);
+  if(!t) return;
+  t.status='ended';
+  t.updated_at=new Date().toISOString();
+  try{ await api('updateTrip',t); }catch(e){toast('API: '+e.message);}
+  saveLocal();
+  updateBadges();
+  renderTripDetail(id);
+  toast('Trip ended');
+}
+let _pickerTripId=null;
+function openTripItemPicker(trip_id){
+  _pickerTripId=trip_id;
+  document.getElementById('pickerSearch').value='';
+  populatePickerList('');
+  document.getElementById('tripItemPickerOverlay').classList.add('open');
+}
+function populatePickerList(search){
+  const t=trips.find(x=>x.trip_id===_pickerTripId);
+  if(!t) return;
+  const s=search.toLowerCase();
+  const active=items.filter(i=>i.status!=='retired'&&(!s||(i.name||'').toLowerCase().includes(s)||(i.brand||'').toLowerCase().includes(s)));
+  const el=document.getElementById('pickerList');
+  if(!active.length){el.innerHTML='<div style="padding:16px;text-align:center;color:var(--muted)">No items found</div>';return;}
+  el.innerHTML=active.map(item=>{
+    const already=t.gear_ids.includes(item.gear_id);
+    const lentConflict=!already&&isItemLentDuring(item.gear_id,t.start_date,t.end_date);
+    const tripConflict=!already&&!lentConflict&&isItemInTripDuring(item.gear_id,t.start_date,t.end_date,t.trip_id);
+    const disabled=lentConflict||tripConflict;
+    if(document.getElementById('pickerAvailOnly')?.checked && disabled && !already) return '';
+    const conflictMsg=lentConflict?'Lent during this period':tripConflict?'In another trip':'';
+    const _pEmoji=CAT_EMOJI[item.category]||'🎒';
+    const emoji=item.photo_url&&safeUrl(item.photo_url)?`<img src="${safeUrl(item.photo_url)}" style="width:32px;height:32px;border-radius:6px;object-fit:cover" onerror="this.style.display='none';this.nextSibling.style.display=''"><span style="display:none;font-size:20px">${_pEmoji}</span>`:`<span style="font-size:20px">${_pEmoji}</span>`;
+    return `<div class="picker-row${disabled?' disabled':''}">
+      <input type="checkbox" class="picker-cb" data-id="${esc(item.gear_id)}"${already?' checked disabled':disabled?' disabled':''}>
+      ${emoji}
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:14px">${esc(item.name)}${already?' <span style="color:var(--muted);font-size:11px">(already added)</span>':''}</div>
+        <div style="color:var(--muted);font-size:12px">${esc(item.brand||'')}${item.weight_g?' · '+fmtWeight(parseFloat(item.weight_g)):''}</div>
+        ${conflictMsg?`<div class="picker-conflict">${esc(conflictMsg)}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+function filterPickerList(){
+  populatePickerList(document.getElementById('pickerSearch').value);
+}
+async function confirmTripItemPicker(){
+  const t=trips.find(x=>x.trip_id===_pickerTripId);
+  if(!t) return;
+  const checked=[...document.querySelectorAll('.picker-cb:checked:not(:disabled)')].map(cb=>cb.dataset.id);
+  if(!checked.length){closeModal('tripItemPickerOverlay');return;}
+  checked.forEach(id=>{if(!t.gear_ids.includes(id)) t.gear_ids.push(id);});
+  t.updated_at=new Date().toISOString();
+  try{ await api('updateTrip',t); }catch(e){toast('API: '+e.message);}
+  saveLocal();
+  closeModal('tripItemPickerOverlay');
+  renderTripDetail(_pickerTripId);
+  toast(`${checked.length} item${checked.length>1?'s':''} added`);
+}
+async function removeItemFromTrip(trip_id,gear_id){
+  const t=trips.find(x=>x.trip_id===trip_id);
+  if(!t) return;
+  t.gear_ids=t.gear_ids.filter(id=>id!==gear_id);
+  t.updated_at=new Date().toISOString();
+  try{ await api('updateTrip',t); }catch(e){toast('API: '+e.message);}
+  saveLocal();
+  renderTripDetail(trip_id);
+  toast('Item removed');
+}
+
+// ════ STATISTICS ════
+function getStatItems(){
+  const mode=document.getElementById('statStatusFilter')?.value||'active';
+  if(mode==='retired') return items.filter(i=>i.status==='retired');
+  if(mode==='all') return items;
+  return items.filter(i=>i.status!=='retired');
+}
+function destroyChart(id){if(_charts[id]){_charts[id].destroy();delete _charts[id];}}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function safeUrl(u){const s=(u||'').trim();return/^https?:\/\//i.test(s)?s:null;}
+function fmtPrice(v){return '€'+Math.round(v).toLocaleString();}
+function fmtWeight(g){return g>=1000?(g/1000).toFixed(2).replace(/\.?0+$/,'')+'kg':g+'g';}
+function fmtTripDate(d){if(!d) return '—';const [y,m,day]=d.split('-');const mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return parseInt(day)+' '+mo[parseInt(m)-1]+' '+y;}
+function fmtDate(v){
+  if(!v) return '';
+  // Handle Google Sheets serial number (days since 1899-12-30)
+  if(typeof v==='number'){
+    // Use UTC date to avoid timezone shifts
+    const d=new Date(Math.round((v-25569)*86400000));
+    return d.toISOString().slice(0,10);
+  }
+  const s=String(v);
+  // Already YYYY-MM-DD — return as-is to avoid timezone shift
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
+  // ISO with time component — extract date part without conversion
+  if(/^\d{4}-\d{2}-\d{2}T/.test(s)) return s.slice(0,10);
+  // Try local parse for other formats (e.g. "April 10, 2022")
+  const parts=s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+  if(parts) return parts[3]+'-'+parts[2].padStart(2,'0')+'-'+parts[1].padStart(2,'0');
+  const d=new Date(s);
+  if(!isNaN(d.getTime())){
+    // Use local date parts to avoid UTC shift
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+  return s;
+}
+
+function setCountMode(mode,btn){countMode=mode;setTabActive(btn);buildCountYearChart(getStatItems());}
+function setCatMode(mode,btn){catMode=mode;setTabActive(btn);buildCatChart(getStatItems());}
+function setSpendMode(mode,btn){spendMode=mode;setTabActive(btn);buildSpendYearChart(getStatItems());}
+function setSpendCatMode(mode,btn){spendCatMode=mode;setTabActive(btn);buildSpendCatChart(getStatItems());}
+function setTabActive(btn){btn.closest('.chart-tabs').querySelectorAll('.chart-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+
+function renderStatistics(){
+  const data=getStatItems();
+  const withPrice=data.filter(i=>parseFloat(i.price)>0);
+  const totalValue=withPrice.reduce((s,i)=>s+parseFloat(i.price||0),0);
+  const avgPrice=withPrice.length?totalValue/withPrice.length:0;
+  const mostExpensive=[...data].sort((a,b)=>parseFloat(b.price||0)-parseFloat(a.price||0))[0];
+  const counts={};
+  data.forEach(i=>counts[i.category]=(counts[i.category]||0)+1);
+  const topCat=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('statsKpi').innerHTML=`
+    <div class="kpi-card kpi-green"><div class="kpi-value">${data.length}</div><div class="kpi-label">Total Items</div><div class="kpi-sub">${items.filter(i=>i.status==='retired').length} retired</div></div>
+    <div class="kpi-card kpi-blue"><div class="kpi-value">${fmtPrice(totalValue)}</div><div class="kpi-label">Total Value</div><div class="kpi-sub">${withPrice.length} items with price</div></div>
+    <div class="kpi-card kpi-amber"><div class="kpi-value">${fmtPrice(avgPrice)}</div><div class="kpi-label">Avg Item Price</div><div class="kpi-sub">per priced item</div></div>
+    <div class="kpi-card kpi-purple"><div class="kpi-value">${mostExpensive?fmtPrice(parseFloat(mostExpensive.price||0)):'—'}</div><div class="kpi-label">Most Expensive</div><div class="kpi-sub">${mostExpensive?esc(mostExpensive.name).substring(0,22):'—'}</div></div>
+    <div class="kpi-card kpi-red"><div class="kpi-value">${topCat?topCat[1]:0}</div><div class="kpi-label">Top Category</div><div class="kpi-sub">${topCat?topCat[0]:'—'}</div></div>`;
+  buildCountYearChart(data);
+  buildCatChart(data);
+  buildSpendYearChart(data);
+  buildSpendCatChart(data);
+  buildBreakdownTables(data);
+}
+
+function getYears(data){
+  return [...new Set(data.map(i=>i.date_purchased?i.date_purchased.substring(0,4):null).filter(Boolean))].sort();
+}
+
+function buildCountYearChart(data){
+  destroyChart('cy');
+  const years=getYears(data); if(!years.length) return;
+  const isLine=countMode==='line';
+  const datasets=CATS.map(cat=>({
+    label:cat,
+    data:years.map(y=>data.filter(i=>i.category===cat&&(i.date_purchased||'').startsWith(y)).length),
+    backgroundColor:getCatColor(cat).bg,borderColor:getCatColor(cat).border,
+    borderWidth:1,borderRadius:isLine?0:4,fill:false,tension:0.3
+  }));
+  _charts.cy=new Chart(document.getElementById('chartCountYear').getContext('2d'),{
+    type:isLine?'line':'bar',data:{labels:years,datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},
+      scales:{x:{stacked:!isLine&&countMode==='stacked',grid:{display:false},ticks:{font:{size:11}}},y:{stacked:!isLine&&countMode==='stacked',beginAtZero:true,ticks:{stepSize:1,font:{size:11}},grid:{color:'rgba(0,0,0,.05)'}}}}
+  });
+}
+
+function buildCatChart(data){
+  destroyChart('cb');
+  let groups={};
+  if(catMode==='category') CATS.forEach(c=>groups[c]=data.filter(i=>i.category===c).length);
+  else if(catMode==='type') data.forEach(i=>{if(i.type) groups[i.type]=(groups[i.type]||0)+1;});
+  else data.forEach(i=>{if(i.brand) groups[i.brand]=(groups[i.brand]||0)+1;});
+  const sorted=Object.entries(groups).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const colors=catMode==='category'?CATS.map(c=>getCatColor(c).bg):PALETTE.slice(0,sorted.length);
+  _charts.cb=new Chart(document.getElementById('chartCatBreakdown').getContext('2d'),{
+    type:'doughnut',
+    data:{labels:sorted.map(e=>e[0]),datasets:[{data:sorted.map(e=>e[1]),backgroundColor:colors,borderWidth:2,borderColor:'#fff',hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
+      plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11},padding:10}},
+        tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw} item${ctx.raw!==1?'s':''}`}}}}
+  });
+}
+
+function buildSpendYearChart(data){
+  destroyChart('sy');
+  const years=getYears(data); if(!years.length) return;
+  const isLine=spendMode==='line';
+  const datasets=CATS.map(cat=>({
+    label:cat,
+    data:years.map(y=>Math.round(data.filter(i=>i.category===cat&&(i.date_purchased||'').startsWith(y)).reduce((s,i)=>s+parseFloat(i.price||0),0))),
+    backgroundColor:getCatColor(cat).bg,borderColor:getCatColor(cat).border,
+    borderWidth:1,borderRadius:isLine?0:4,fill:false,tension:0.3
+  }));
+  _charts.sy=new Chart(document.getElementById('chartSpendYear').getContext('2d'),{
+    type:isLine?'line':'bar',data:{labels:years,datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},
+      scales:{x:{stacked:!isLine&&spendMode==='stacked',grid:{display:false},ticks:{font:{size:11}}},y:{stacked:!isLine&&spendMode==='stacked',beginAtZero:true,ticks:{font:{size:11},callback:v=>'€'+v},grid:{color:'rgba(0,0,0,.05)'}}}}
+  });
+}
+
+function buildSpendCatChart(data){
+  destroyChart('sc');
+  let groups={};
+  if(spendCatMode==='category') CATS.forEach(c=>groups[c]=Math.round(data.filter(i=>i.category===c).reduce((s,i)=>s+parseFloat(i.price||0),0)));
+  else if(spendCatMode==='type') data.forEach(i=>{if(i.type) groups[i.type]=Math.round((groups[i.type]||0)+parseFloat(i.price||0));});
+  else data.forEach(i=>{if(i.brand) groups[i.brand]=Math.round((groups[i.brand]||0)+parseFloat(i.price||0));});
+  const sorted=Object.entries(groups).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const colors=spendCatMode==='category'?CATS.map(c=>getCatColor(c).bg):PALETTE.slice(0,sorted.length);
+  _charts.sc=new Chart(document.getElementById('chartSpendCat').getContext('2d'),{
+    type:'doughnut',
+    data:{labels:sorted.map(e=>e[0]),datasets:[{data:sorted.map(e=>e[1]),backgroundColor:colors,borderWidth:2,borderColor:'#fff',hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
+      plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11},padding:10}},
+        tooltip:{callbacks:{label:ctx=>` ${ctx.label}: €${ctx.raw}`}}}}
+  });
+}
+
+function buildBreakdownTables(data){
+  const catRows=CATS.map(cat=>{
+    const ci=data.filter(i=>i.category===cat);
+    return{label:cat,count:ci.length,value:Math.round(ci.reduce((s,i)=>s+parseFloat(i.price||0),0))};
+  }).sort((a,b)=>b.count-a.count);
+  const maxC=Math.max(...catRows.map(r=>r.count),1);
+  document.getElementById('tableByCategory').innerHTML=`<table class="breakdown-table"><thead><tr><th>Category</th><th>Items</th><th>Value</th><th style="width:120px">Share</th></tr></thead><tbody>${catRows.map(r=>`<tr><td><span class="tag tag-${r.label.toLowerCase()}">${CAT_EMOJI[r.label]||''} ${r.label}</span></td><td><strong>${r.count}</strong></td><td>${r.value?'€'+r.value:'—'}</td><td><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${Math.round(r.count/maxC*100)}%;background:${getCatColor(r.label).border}"></div></div></td></tr>`).join('')}</tbody></table>`;
+  const bm={};
+  data.forEach(i=>{if(!i.brand) return; if(!bm[i.brand]) bm[i.brand]={count:0,value:0}; bm[i.brand].count++; bm[i.brand].value+=parseFloat(i.price||0);});
+  const brandRows=Object.entries(bm).map(([b,v])=>({label:b,count:v.count,value:Math.round(v.value)})).sort((a,b)=>b.count-a.count).slice(0,10);
+  const maxB=Math.max(...brandRows.map(r=>r.count),1);
+  document.getElementById('tableByBrand').innerHTML=`<table class="breakdown-table"><thead><tr><th>Brand</th><th>Items</th><th>Value</th><th style="width:120px">Share</th></tr></thead><tbody>${brandRows.map((r,i)=>`<tr><td>${esc(r.label)}</td><td><strong>${r.count}</strong></td><td>${r.value?'€'+r.value:'—'}</td><td><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${Math.round(r.count/maxB*100)}%;background:${PALETTE[i%PALETTE.length]}"></div></div></td></tr>`).join('')}</tbody></table>`;
+}
+
+// ════ HIERARCHICAL SELECTS ════
+function populateBrandSelect(sel=''){
+  const el=document.getElementById('fBrand');
+  el.innerHTML='<option value="">— select brand —</option>';
+  (lookups.brands||[]).forEach(b=>{const o=document.createElement('option');o.value=b;o.textContent=b;if(b===sel)o.selected=true;el.appendChild(o);});
+}
+function onCatChange(){
+  const cat=document.getElementById('fCategory').value;
+  const ts=document.getElementById('fType'); const ss=document.getElementById('fSubtype');
+  ts.innerHTML='<option value="">— select type —</option>'; ss.innerHTML='<option value="">— select type first —</option>'; ss.disabled=true;
+  if(!cat||!lookups.hierarchy[cat]){ts.disabled=true;return;} ts.disabled=false;
+  Object.keys(lookups.hierarchy[cat]||{}).forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;ts.appendChild(o);});
+}
+function onTypeChange(){
+  const cat=document.getElementById('fCategory').value; const typ=document.getElementById('fType').value;
+  const ss=document.getElementById('fSubtype'); ss.innerHTML='<option value="">— select subtype —</option>';
+  const subs=(lookups.hierarchy[cat]||{})[typ]||[];
+  if(!subs.length){ss.disabled=true;return;} ss.disabled=false;
+  subs.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;ss.appendChild(o);});
+}
+function setFormSelects(item){
+  populateBrandSelect(item.brand||'');
+  document.getElementById('fCategory').value=item.category||''; onCatChange();
+  document.getElementById('fType').value=item.type||''; onTypeChange();
+  document.getElementById('fSubtype').value=item.subtype||'';
+}
+
+// ════ ADD/EDIT ════
+function toggleLentFields(){
+  const _s=document.getElementById('fStatus').value;
+  document.getElementById('lentFields').style.display=_s==='lent'?'':'none';
+  const _rg=document.getElementById('retireReasonGroup');
+  if(_rg) _rg.style.display=_s==='retired'?'':'none';
+}
+function clearForm(){
+  populateCategoryDropdowns();
+  ['fName','fModel','fSerial','fSize','fNotes','fLentTo','fPhotoUrl'].forEach(id=>document.getElementById(id).value='');
+  ['fDateBought','fDateProd','fPrice','fWeight','fLentDate','fLentReturn'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fStatus').value='active'; document.getElementById('lentFields').style.display='none';
+  const _rg=document.getElementById('retireReasonGroup'); if(_rg) _rg.style.display='none';
+  populateBrandSelect(); document.getElementById('fCategory').value='';
+  document.getElementById('fType').innerHTML='<option value="">— select category first —</option>'; document.getElementById('fType').disabled=true;
+  document.getElementById('fSubtype').innerHTML='<option value="">— select type first —</option>'; document.getElementById('fSubtype').disabled=true;
+}
+function openAddModal(){editingId=null;clearForm();document.getElementById('mTitle').textContent='Add Gear';document.getElementById('addOverlay').classList.add('open');}
+function openEdit(id){
+  const item=items.find(i=>i.gear_id===id); if(!item) return;
+  editingId=id; document.getElementById('mTitle').textContent='Edit Gear';
+  document.getElementById('fName').value=item.name||'';document.getElementById('fModel').value=item.model||'';
+  document.getElementById('fDateBought').value=item.date_purchased||'';document.getElementById('fDateProd').value=item.date_produced||'';
+  document.getElementById('fPrice').value=item.price||'';document.getElementById('fWeight').value=item.weight_g||'';
+  document.getElementById('fSize').value=item.size_color||'';document.getElementById('fSerial').value=item.serial_cert||'';
+  document.getElementById('fStatus').value=item.status||'active';
+  let _editNotes=item.notes||'';
+  if(item.status==='retired'){
+    const _m=_editNotes.match(/^\[Retired:\s*([^\]]+)\]/);
+    if(_m){
+      const _rlv={worn_out:'Worn out',damaged:'Damaged',upgraded:'Upgraded',sold:'Sold',other:'Other'};
+      const _rv=Object.entries(_rlv).find(([k,v])=>v===_m[1].trim())?.[0]||'other';
+      const _rr=document.getElementById('fRetireReason');
+      if(_rr) _rr.value=_rv;
+      _editNotes=_editNotes.replace(/^\[Retired:[^\]]*\]\s*/,'');
+    }
+  }
+  document.getElementById('fNotes').value=_editNotes;
+  document.getElementById('fPhotoUrl').value=item.photo_url||'';
+  setFormSelects(item); toggleLentFields();
+  const lend=currentLend(id)||{};
+  document.getElementById('fLentTo').value=lend.lent_to||'';document.getElementById('fLentDate').value=lend.date_lent||'';document.getElementById('fLentReturn').value=lend.date_due||'';
+  closeModal('detailOverlay'); document.getElementById('addOverlay').classList.add('open');
+}
+async function saveItem(){
+  const name=document.getElementById('fName').value.trim(); const brand=document.getElementById('fBrand').value;
+  if(!name||!brand){toast('Name and brand are required');return;}
+  const btn=document.getElementById('saveBtn'); btn.disabled=true; btn.textContent='Saving...';
+  const body={name,brand,category:document.getElementById('fCategory').value,type:document.getElementById('fType').value,
+    subtype:document.getElementById('fSubtype').value,model:document.getElementById('fModel').value.trim(),
+    date_purchased:document.getElementById('fDateBought').value,date_produced:document.getElementById('fDateProd').value,
+    price:document.getElementById('fPrice').value,weight_g:document.getElementById('fWeight').value,
+    size_color:document.getElementById('fSize').value.trim(),serial_cert:document.getElementById('fSerial').value.trim(),
+    photo_url:document.getElementById('fPhotoUrl').value.trim()};
+  let _saveNotes=document.getElementById('fNotes').value.trim();
+  const _saveStatus=document.getElementById('fStatus').value;
+  body.status=_saveStatus;
+  if(_saveStatus==='retired'){
+    const _reason=document.getElementById('fRetireReason')?.value||'other';
+    const _rl={worn_out:'Worn out',damaged:'Damaged',upgraded:'Upgraded',sold:'Sold',other:'Other'};
+    _saveNotes=_saveNotes.replace(/^\[Retired:[^\]]*\]\s*/,'');
+    _saveNotes='[Retired: '+(_rl[_reason]||_reason)+'] '+_saveNotes;
+  }
+  body.notes=_saveNotes;
+  body.service_log=editingId?(items.find(i=>i.gear_id===editingId)?.service_log||''):'';
+  try{
+    if(getApiUrl()){
+      if(editingId){body.gear_id=editingId;await api('updateGear',body);}
+      else{const r=await api('addGear',body);body.gear_id=r.gear_id;}
+      // Lend records are now created via the dedicated Lend dialog (quickLend/confirmLend)
+    }
+  }catch(e){toast('API error: '+e.message);}
+  if(editingId){const idx=items.findIndex(i=>i.gear_id===editingId);if(idx>=0) items[idx]={...items[idx],...body};}
+  else{body.gear_id=body.gear_id||('GEAR-'+Date.now().toString(36).toUpperCase());items.unshift(body);}
+  // Lend records created separately via confirmLend()
+  saveLocal(); btn.disabled=false; btn.textContent='Save Gear'; closeModal('addOverlay');
+  toast(editingId?'Item updated':'Item added'); renderAll();
+}
+function duplicateItem(id){
+  const src=items.find(i=>i.gear_id===id); if(!src) return;
+  // Pre-fill form with source item data, clear identity fields
+  editingId=null;
+  populateCategoryDropdowns();
+  document.getElementById('mTitle').textContent='Duplicate: '+src.name;
+  document.getElementById('fName').value=src.name;
+  document.getElementById('fModel').value=src.model||'';
+  document.getElementById('fDateBought').value=src.date_purchased||'';
+  document.getElementById('fDateProd').value=src.date_produced||'';
+  document.getElementById('fPrice').value=src.price||'';
+  document.getElementById('fWeight').value=src.weight_g||'';
+  document.getElementById('fSize').value=src.size_color||'';
+  document.getElementById('fSerial').value=''; // clear — unique per item
+  document.getElementById('fStatus').value='active';
+  document.getElementById('fNotes').value=src.notes||'';
+  document.getElementById('fPhotoUrl').value=src.photo_url||'';
+  document.getElementById('lentFields').style.display='none';
+  setFormSelects(src);
+  document.getElementById('addOverlay').classList.add('open');
+  // Focus production date field since that's usually the only thing that differs
+  setTimeout(()=>{
+    const pd=document.getElementById('fDateProd');
+    pd.focus();
+    pd.scrollIntoView({behavior:'smooth',block:'center'});
+  },80);
+  toast('Duplicated — update serial / date as needed');
+}
+async function deleteItem(id){
+  if(!confirm('Delete this item permanently?')) return;
+  try{if(getApiUrl()) await api('deleteGear',{gear_id:id});}catch(e){toast('API: '+e.message);}
+  items=items.filter(i=>i.gear_id!==id);
+  lends=lends.filter(l=>l.gear_id!==id); // clean up associated lend records
+  saveLocal(); closeModal('detailOverlay'); toast('Item deleted'); renderAll();
+}
+function quickLend(id){
+  const item=items.find(i=>i.gear_id===id); if(!item) return;
+  if(activeTrip(id)){toast('Item is currently in an active trip');return;}
+  document.getElementById('lGearId').value=id;
+  document.getElementById('lGearName').textContent=item.name+(item.brand?' — '+item.brand:'');
+  document.getElementById('lendTitle').textContent='Lend: '+item.name;
+  document.getElementById('lLentTo').value='';
+  document.getElementById('lDateLent').value=new Date().toISOString().slice(0,10);
+  document.getElementById('lDateDue').value='';
+  document.getElementById('lNotes').value='';
+  document.getElementById('lendOverlay').classList.add('open');
+}
+async function confirmLend(){
+  const gear_id=document.getElementById('lGearId').value;
+  const lent_to=document.getElementById('lLentTo').value.trim();
+  if(!lent_to){toast('Please enter who you are lending to');return;}
+  const item=items.find(i=>i.gear_id===gear_id); if(!item) return;
+  const date_lent=document.getElementById('lDateLent').value;
+  const date_due=document.getElementById('lDateDue').value;
+  const notes=document.getElementById('lNotes').value.trim();
+  if(isItemInTripDuring(gear_id,date_lent,date_due||'9999-12-31')){toast('Item is assigned to a trip during this period');return;}
+  const lendRecord={lend_id:'LEND-'+Date.now().toString(36).toUpperCase(),gear_id,gear_name:item.name,lent_to,date_lent,date_due,date_returned:'',condition_on_return:'',notes};
+  const btn=document.getElementById('confirmLendBtn');btn.disabled=true;btn.textContent='Saving...';
+  if(getApiUrl()){
+    try{
+      const r=await api('addLend',{gear_id,gear_name:item.name,lent_to,date_lent,date_due,notes});
+      if(r&&r.lend_id) lendRecord.lend_id=r.lend_id;
+    }catch(e){
+      btn.disabled=false;btn.textContent='Confirm Lend';
+      toast('API error — lend not saved: '+e.message);
+      return;
+    }
+  }
+  btn.disabled=false;btn.textContent='Confirm Lend';
+  lends.unshift(lendRecord);
+  item.status='lent';
+  saveLocal();
+  closeModal('lendOverlay');
+  toast('Gear lent to '+lent_to);
+  renderAll();
+}
+
+// ════ RETURN ════
+function openReturn(gear_id){
+  const lend=currentLend(gear_id); if(!lend) return;
+  document.getElementById('rLendId').value=lend.lend_id;document.getElementById('rGearId').value=gear_id;
+  document.getElementById('rDate').value=new Date().toISOString().slice(0,10);document.getElementById('rCondition').value='';
+  closeModal('detailOverlay'); document.getElementById('returnOverlay').classList.add('open');
+}
+async function confirmReturn(){
+  const lend_id=document.getElementById('rLendId').value;const gear_id=document.getElementById('rGearId').value;
+  const date_returned=document.getElementById('rDate').value;const cond=document.getElementById('rCondition').value;
+  const btn=document.getElementById('confirmReturnBtn');btn.disabled=true;btn.textContent='Saving...';
+  try{if(getApiUrl()) await api('returnGear',{lend_id,gear_id,date_returned,condition_on_return:cond});}catch(e){btn.disabled=false;btn.textContent='Confirm Return';toast('API: '+e.message);return;}
+  btn.disabled=false;btn.textContent='Confirm Return';
+  const lend=lends.find(l=>l.lend_id===lend_id);
+  if(lend){lend.date_returned=date_returned;lend.condition_on_return=cond;}
+  const item=items.find(i=>i.gear_id===gear_id);if(item) item.status='active';
+  saveLocal();closeModal('returnOverlay');toast('Gear marked as returned');renderAll();
+}
+
+// ════ SERVICE LOG ════
+function getServiceLog(item){
+  if(!item.service_log) return [];
+  try{return JSON.parse(item.service_log);}catch(e){return [];}
+}
+async function addServiceLogEntry(gearId){
+  const item=items.find(i=>i.gear_id===gearId); if(!item) return;
+  const type=document.getElementById('slogType').value;
+  const note=document.getElementById('slogNote').value.trim();
+  const date=document.getElementById('slogDate').value||new Date().toISOString().slice(0,10);
+  if(!note){toast('Note is required');return;}
+  const log=getServiceLog(item);
+  log.unshift({date,type,note});
+  item.service_log=JSON.stringify(log);
+  try{if(getApiUrl()) await api('updateGear',{gear_id:gearId,service_log:item.service_log});}catch(e){toast('API: '+e.message);}
+  saveLocal();
+  openDetail(gearId);
+  toast('Log entry added');
+}
+
+// ════ DETAIL ════
+function openDetail(id){
+  const item=items.find(i=>i.gear_id===id); if(!item) return;
+  const emoji=CAT_EMOJI[item.category]||'🎒';
+  const safePhoto=safeUrl(item.photo_url);
+  const photo=safePhoto?`<div class="detail-photo"><img src="${safePhoto}" alt="${esc(item.name)}" onerror="this.parentElement.innerHTML='${emoji}'"></div>`:`<div class="detail-photo">${emoji}</div>`;
+  const lend=currentLend(id);
+  const lentBox=lend?`<div class="lent-box"><div class="lent-box-title">Currently Lent Out</div><div>To: <strong>${esc(lend.lent_to||'Unknown')}</strong></div>${lend.date_lent?`<div>Since: ${esc(lend.date_lent)}</div>`:''} ${lend.date_due?`<div>Due back: <strong>${esc(lend.date_due)}</strong></div>`:''}</div>`:'';
+  const fields=[['Brand',item.brand],['Category',item.category],['Type',item.type],['Subtype',item.subtype],['Model',item.model],['Purchased',item.date_purchased],['Price',item.price?'€'+item.price:''],['Weight',item.weight_g?item.weight_g+'g':''],['Size/Color',item.size_color],['Serial/Cert',item.serial_cert],['Status',item.status]].filter(f=>f[1]);
+  const retireMatch=(item.notes||'').match(/^\[Retired:\s*([^\]]+)\]/);
+  const retireTag=item.status==='retired'?`<span class="tag tag-retired">Retired${retireMatch?' · '+retireMatch[1]:''}</span>`:'';
+  const log=getServiceLog(item);
+  const logHtml=`<div style="margin-top:16px"><div style="font-weight:700;margin-bottom:8px;font-size:13px">Service Log</div>${log.length?log.map(e=>`<div class="slog-entry"><span class="slog-date">${esc(e.date)}</span><span class="slog-type">${esc(e.type)}</span><div style="margin-top:3px">${esc(e.note)}</div></div>`).join(''):'<div style="color:var(--muted);font-size:13px">No entries yet.</div>'}<div class="slog-add"><input type="date" class="fc" id="slogDate" value="${new Date().toISOString().slice(0,10)}" style="font-size:12px"><select class="fc" id="slogType" style="font-size:12px"><option>Inspection</option><option>Fall/Impact</option><option>Service</option><option>Repair</option><option>Note</option></select><input type="text" class="fc" id="slogNote" placeholder="Entry note…" style="grid-column:1/-1;font-size:12px"><button class="btn btn-primary btn-sm" onclick="addServiceLogEntry('${esc(item.gear_id)}')" style="grid-column:1/-1">Add Entry</button></div></div>`;
+  const displayNotes=item.notes?item.notes.replace(/^\[Retired:[^\]]*\]\s*/,''):'';
+  document.getElementById('detailContent').innerHTML=`<div class="detail-header">${photo}<div><div class="detail-name">${esc(item.name)}</div><div class="detail-brand">${esc(item.brand)}${item.model?' — '+esc(item.model):''}</div><div class="card-badges"><span class="tag" style="${getCatTagStyle(item.category)}">${item.category}</span>${item.type?`<span class="tag tag-muted">${item.type}</span>`:''}${item.subtype?`<span class="tag tag-muted">${item.subtype}</span>`:''}${item.status==='lent'?'<span class="tag tag-lent">Lent Out</span>':''}${retireTag}</div></div></div>${lentBox}<div class="detail-grid">${fields.map(([l,v])=>`<div><div class="dfl">${l}</div><div class="dfv">${esc(v)}</div></div>`).join('')}</div>${displayNotes?`<div class="dfl" style="margin-bottom:6px">Notes</div><div class="notes-box">${esc(displayNotes)}</div>`:''}${logHtml}`;
+  document.getElementById('detailActions').innerHTML=`<button class="btn btn-danger btn-sm" onclick="deleteItem('${item.gear_id}')">Delete</button>${item.status==='lent'?`<button class="btn btn-warn" onclick="openReturn('${item.gear_id}')">Mark Returned</button>`:''}${item.status==='active'?`<button class="btn btn-warn" onclick="closeModal('detailOverlay');quickLend('${item.gear_id}')">Lend</button>`:''}<button class="btn btn-ghost" onclick="closeModal('detailOverlay');duplicateItem('${item.gear_id}')">Duplicate</button><button class="btn btn-ghost" onclick="closeModal('detailOverlay')">Close</button><button class="btn btn-primary" onclick="openEdit('${item.gear_id}')">Edit</button>`;
+  document.getElementById('detailOverlay').classList.add('open');
+}
+
+
+// ════ INSPECTION ════
+function getAgeYears(dateProd){
+  if(!dateProd) return null;
+  const prod=new Date(dateProd);
+  if(isNaN(prod.getTime())) return null;
+  const now=new Date();
+  return (now - prod) / (1000*60*60*24*365.25);
+}
+function ageClass(years){
+  if(years===null) return null;
+  if(years>=7) return 'red';
+  if(years>=5) return 'amber';
+  return 'green';
+}
+function ageLabel(years){
+  if(years===null) return '—';
+  const y=Math.floor(years);
+  const m=Math.floor((years-y)*12);
+  return y>0?`${y}y ${m}m`:`${m}m`;
+}
+function renderInspection(){
+  const mode=document.getElementById('inspStatusFilter')?.value||'active';
+  const pool=(mode==='all'?items:items.filter(i=>i.status!=='retired'))
+    .filter(i=>i.date_produced);
+
+  const green=pool.filter(i=>ageClass(getAgeYears(i.date_produced))==='green');
+  const amber=pool.filter(i=>ageClass(getAgeYears(i.date_produced))==='amber');
+  const red  =pool.filter(i=>ageClass(getAgeYears(i.date_produced))==='red');
+
+  document.getElementById('inspCards').innerHTML=`
+    <div class="insp-card age-green">
+      <div class="insp-label">&#60; 5 Years Old</div>
+      <div class="insp-value">${green.length}</div>
+      <div class="insp-sub">items in good standing</div>
+    </div>
+    <div class="insp-card age-amber">
+      <div class="insp-label">5 – 7 Years Old</div>
+      <div class="insp-value">${amber.length}</div>
+      <div class="insp-sub">consider inspection</div>
+    </div>
+    <div class="insp-card age-red">
+      <div class="insp-label">7+ Years Old</div>
+      <div class="insp-value">${red.length}</div>
+      <div class="insp-sub">inspect or replace</div>
+    </div>
+    <div class="insp-card" style="background:var(--surface);border-color:var(--border)">
+      <div class="insp-label" style="color:var(--muted)">Total Tracked</div>
+      <div class="insp-value" style="color:var(--accent)">${pool.length}</div>
+      <div class="insp-sub">items with prod. date</div>
+    </div>`;
+
+  // Sort: oldest first
+  const sorted=[...pool].sort((a,b)=>{
+    const ya=getAgeYears(a.date_produced)||0;
+    const yb=getAgeYears(b.date_produced)||0;
+    return yb-ya;
+  });
+
+  if(!sorted.length){
+    document.getElementById('inspTbody').innerHTML=`<tr><td colspan="9" style="text-align:center;padding:36px;color:var(--muted)">No items with production date set</td></tr>`;
+    return;
+  }
+
+  document.getElementById('inspTbody').innerHTML=sorted.map(i=>{
+    const yrs=getAgeYears(i.date_produced);
+    const cls=ageClass(yrs);
+    const emoji=CAT_EMOJI[i.category]||'🎒';
+    const safePhoto=safeUrl(i.photo_url);
+    const photo=`<td><div class="td-photo">${safePhoto?`<img src="${safePhoto}" onerror="this.parentElement.innerHTML='${emoji}'" alt="">`:emoji}</div></td>`;
+    const statusBadge=i.status==='lent'?'<span class="tag tag-lent">Lent</span>':i.status==='retired'?'<span class="tag tag-retired">Retired</span>':'<span class="tag tag-camping">Active</span>';
+    const dotColor={'green':'age-dot-green','amber':'age-dot-amber','red':'age-dot-red'}[cls];
+    return `<tr class="insp-row-${cls}">
+      ${photo}
+      <td class="td-name" onclick="openDetail('${i.gear_id}')">${esc(i.name)}<small>${esc(i.brand)}${i.model?' · '+esc(i.model):''}</small></td>
+      <td>${esc(i.brand)||'—'}</td>
+      <td><span class="tag" style="${getCatTagStyle(i.category)}">${i.category}</span></td>
+      <td>${i.type||'—'}</td>
+      <td>${i.date_produced||'—'}</td>
+      <td><span class="age-dot ${dotColor}"></span>${ageLabel(yrs)}</td>
+      <td>${statusBadge}</td>
+      <td><div class="td-actions">
+        <button class="btn btn-ghost btn-sm icon-btn" onclick="openEdit('${i.gear_id}')" title="Edit">&#9998;</button>
+        <button class="btn btn-danger btn-sm icon-btn" onclick="deleteItem('${i.gear_id}')" title="Delete">&#10005;</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+
+// ════ INLINE EDIT HELPERS ════
+function startEdit(liId){
+  const el=document.getElementById(liId);
+  el.classList.add('editing');
+  el.querySelectorAll('.edit-show').forEach(b=>b.style.display='none');
+  el.querySelectorAll('.edit-save,.edit-cancel').forEach(b=>b.style.display='');
+  const inp=el.querySelector('input.fc');
+  if(inp){inp.focus();inp.select();}
+}
+function cancelEdit(liId){
+  const el=document.getElementById(liId);
+  el.classList.remove('editing');
+  el.querySelectorAll('.edit-show').forEach(b=>b.style.display='');
+  el.querySelectorAll('.edit-save,.edit-cancel').forEach(b=>b.style.display='none');
+}
+function startEditCat(cat){ startEdit('cat-li-'+cat); }
+function startEditBrand(brand){ startEdit('brand-li-'+brand); }
+function startEditType(cat,typ){ startEdit('type-li-'+cat+'-'+typ); }
+
+async function saveEditCat(oldCat){
+  const newCat=document.getElementById('cat-edit-'+oldCat).value.trim();
+  if(!newCat||newCat===oldCat){cancelEdit('cat-li-'+oldCat);return;}
+  if(lookups.hierarchy[newCat]){toast('Category already exists');return;}
+  // Rename in hierarchy
+  lookups.hierarchy[newCat]=lookups.hierarchy[oldCat];
+  delete lookups.hierarchy[oldCat];
+  // Propagate to items
+  items.forEach(i=>{if(i.category===oldCat) i.category=newCat;});
+  try{if(getApiUrl()){
+    await api('renameCategory',{oldName:oldCat,newName:newCat});
+    // Bulk-update affected items
+    const affected=items.filter(i=>i.category===newCat);
+    for(const it of affected) await api('updateGear',{gear_id:it.gear_id,category:newCat});
+  }}catch(e){toast('API: '+e.message);}
+  saveLocal();renderLookupUI();renderAll();toast(`Category renamed to "${newCat}"`);
+}
+
+async function saveEditBrand(oldBrand){
+  const newBrand=document.getElementById('brand-edit-'+oldBrand).value.trim();
+  if(!newBrand||newBrand===oldBrand){cancelEdit('brand-li-'+oldBrand);return;}
+  if(lookups.brands.includes(newBrand)){toast('Brand already exists');return;}
+  const idx=lookups.brands.indexOf(oldBrand);
+  if(idx>=0) lookups.brands[idx]=newBrand;
+  lookups.brands.sort();
+  // Propagate to items
+  items.forEach(i=>{if(i.brand===oldBrand) i.brand=newBrand;});
+  try{if(getApiUrl()){
+    await api('renameBrand',{oldName:oldBrand,newName:newBrand});
+    const affected=items.filter(i=>i.brand===newBrand);
+    for(const it of affected) await api('updateGear',{gear_id:it.gear_id,brand:newBrand});
+  }}catch(e){toast('API: '+e.message);}
+  saveLocal();renderLookupUI();renderAll();toast(`Brand renamed to "${newBrand}"`);
+}
+
+async function saveEditType(cat,oldType){
+  const newType=(document.getElementById('ht-edit-'+hId(cat)+'-'+hId(oldType))?.value||'').trim();
+  if(!newType||newType===oldType){cancelEdit('ht-'+hId(cat)+'-'+hId(oldType));return;}
+  if(lookups.hierarchy[cat][newType]){toast('Type already exists in this category');return;}
+  lookups.hierarchy[cat][newType]=lookups.hierarchy[cat][oldType];
+  delete lookups.hierarchy[cat][oldType];
+  if(_hierOpen.types.has(cat+'\0'+oldType)){_hierOpen.types.delete(cat+'\0'+oldType);_hierOpen.types.add(cat+'\0'+newType);}
+  items.forEach(i=>{if(i.category===cat&&i.type===oldType) i.type=newType;});
+  try{if(getApiUrl()){
+    await api('renameType',{category:cat,oldName:oldType,newName:newType});
+    const affected=items.filter(i=>i.category===cat&&i.type===newType);
+    for(const it of affected) await api('updateGear',{gear_id:it.gear_id,type:newType});
+  }}catch(e){toast('API: '+e.message);}
+  saveLocal();renderLookupUI();renderAll();toast(`Type renamed to "${newType}"`);
+}
+
+// ════ SETTINGS ════
+let _hierOpen={cats:new Set(),types:new Set()};
+function hId(s){return s.replace(/[^a-zA-Z0-9]/g,'_');}
+function toggleHCat(cat){
+  const open=_hierOpen.cats.has(cat);
+  if(open) _hierOpen.cats.delete(cat); else _hierOpen.cats.add(cat);
+  const ch=document.getElementById('hc-ch-'+hId(cat));
+  const tg=document.querySelector('#hc-'+hId(cat)+' > .htree-toggle');
+  if(ch) ch.style.display=open?'none':'';
+  if(tg) tg.classList.toggle('open',!open);
+}
+function toggleHType(cat,typ){
+  const key=cat+'\0'+typ;
+  const open=_hierOpen.types.has(key);
+  if(open) _hierOpen.types.delete(key); else _hierOpen.types.add(key);
+  const ch=document.getElementById('ht-ch-'+hId(cat)+'-'+hId(typ));
+  const tg=document.querySelector('#ht-'+hId(cat)+'-'+hId(typ)+' > .htree-toggle');
+  if(ch) ch.style.display=open?'none':'';
+  if(tg) tg.classList.toggle('open',!open);
+}
+function showAddType(cat){
+  const r=document.getElementById('add-t-'+hId(cat)); if(!r) return;
+  r.classList.add('open');
+  if(!_hierOpen.cats.has(cat)) toggleHCat(cat);
+  const inp=document.getElementById('new-t-'+hId(cat)); if(inp) inp.focus();
+}
+function cancelAddType(cat){
+  const r=document.getElementById('add-t-'+hId(cat)); if(r){r.classList.remove('open');const inp=r.querySelector('input');if(inp)inp.value='';}
+}
+async function confirmAddType(cat){
+  const inp=document.getElementById('new-t-'+hId(cat)); if(!inp) return;
+  const typ=inp.value.trim(); if(!typ){toast('Type name required');return;}
+  if(!lookups.hierarchy[cat]) lookups.hierarchy[cat]={};
+  if(lookups.hierarchy[cat][typ]){toast('Type already exists');return;}
+  lookups.hierarchy[cat][typ]=[];
+  try{if(getApiUrl()) await api('addCategoryType',{category:cat,type:typ,subtype:''});}catch(e){toast('API: '+e.message);}
+  _hierOpen.types.add(cat+'\0'+typ);
+  saveLocal(); inp.value=''; cancelAddType(cat); renderLookupUI(); toast('Type added');
+}
+function showAddSub(cat,typ){
+  const r=document.getElementById('add-s-'+hId(cat)+'-'+hId(typ)); if(!r) return;
+  r.classList.add('open');
+  if(!_hierOpen.types.has(cat+'\0'+typ)) toggleHType(cat,typ);
+  const inp=document.getElementById('new-s-'+hId(cat)+'-'+hId(typ)); if(inp) inp.focus();
+}
+function cancelAddSub(cat,typ){
+  const r=document.getElementById('add-s-'+hId(cat)+'-'+hId(typ)); if(r){r.classList.remove('open');const inp=r.querySelector('input');if(inp)inp.value='';}
+}
+async function confirmAddSub(cat,typ){
+  const inp=document.getElementById('new-s-'+hId(cat)+'-'+hId(typ)); if(!inp) return;
+  const sub=inp.value.trim(); if(!sub){toast('Subtype name required');return;}
+  if(!lookups.hierarchy[cat]?.[typ]) return;
+  if(lookups.hierarchy[cat][typ].includes(sub)){toast('Subtype already exists');return;}
+  lookups.hierarchy[cat][typ].push(sub);
+  try{if(getApiUrl()) await api('addCategoryType',{category:cat,type:typ,subtype:sub});}catch(e){toast('API: '+e.message);}
+  saveLocal(); inp.value=''; cancelAddSub(cat,typ); renderLookupUI(); toast('Subtype added');
+}
+function showAddCat(){
+  const r=document.getElementById('add-cat-row'); if(r) r.classList.add('open');
+  const inp=document.getElementById('new-cat-input'); if(inp) inp.focus();
+}
+function cancelAddCat(){
+  const r=document.getElementById('add-cat-row'); if(r) r.classList.remove('open');
+  const inp=document.getElementById('new-cat-input'); if(inp) inp.value='';
+}
+async function confirmAddCat(){
+  const v=(document.getElementById('new-cat-input')?.value||'').trim(); if(!v) return;
+  if(lookups.hierarchy[v]){toast('Category already exists');return;}
+  try{if(getApiUrl()) await api('addCategory',{category:v});}catch(e){toast('API: '+e.message);}
+  lookups.hierarchy[v]={}; _hierOpen.cats.add(v); saveLocal(); cancelAddCat(); renderLookupUI(); toast('Category added');
+}
+async function saveHCat(oldCat){
+  const newCat=(document.getElementById('hc-edit-'+hId(oldCat))?.value||'').trim();
+  if(!newCat||newCat===oldCat){cancelEdit('hc-'+hId(oldCat));return;}
+  if(lookups.hierarchy[newCat]){toast('Category already exists');return;}
+  lookups.hierarchy[newCat]=lookups.hierarchy[oldCat];
+  delete lookups.hierarchy[oldCat];
+  if(_hierOpen.cats.has(oldCat)){_hierOpen.cats.delete(oldCat);_hierOpen.cats.add(newCat);}
+  items.forEach(i=>{if(i.category===oldCat) i.category=newCat;});
+  try{if(getApiUrl()){
+    await api('renameCategory',{oldName:oldCat,newName:newCat});
+    const affected=items.filter(i=>i.category===newCat);
+    for(const it of affected) await api('updateGear',{gear_id:it.gear_id,category:newCat});
+  }}catch(e){toast('API: '+e.message);}
+  saveLocal();renderLookupUI();renderAll();toast(`Category renamed to "${newCat}"`);
+}
+async function saveEditSub(cat,typ,oldSub){
+  const sid=hId(cat)+'-'+hId(typ)+'-'+hId(oldSub);
+  const newSub=(document.getElementById('hs-edit-'+sid)?.value||'').trim();
+  if(!newSub||newSub===oldSub){cancelEdit('hs-'+sid);return;}
+  const arr=lookups.hierarchy[cat]?.[typ]||[];
+  if(arr.includes(newSub)){toast('Subtype already exists');return;}
+  const idx=arr.indexOf(oldSub); if(idx>=0) arr[idx]=newSub;
+  items.forEach(i=>{if(i.category===cat&&i.type===typ&&i.subtype===oldSub) i.subtype=newSub;});
+  try{if(getApiUrl()){
+    await api('renameSubtype',{category:cat,type:typ,oldName:oldSub,newName:newSub});
+    const affected=items.filter(i=>i.category===cat&&i.type===typ&&i.subtype===newSub);
+    for(const it of affected) await api('updateGear',{gear_id:it.gear_id,subtype:newSub});
+  }}catch(e){toast('API: '+e.message);}
+  saveLocal();renderLookupUI();renderAll();toast(`Subtype renamed to "${newSub}"`);
+}
+async function removeSub(cat,typ,sub){
+  if(!confirm(`Remove subtype "${sub}"?`)) return;
+  if(lookups.hierarchy[cat]?.[typ]) lookups.hierarchy[cat][typ]=lookups.hierarchy[cat][typ].filter(s=>s!==sub);
+  try{if(getApiUrl()) await api('removeSubtype',{category:cat,type:typ,subtype:sub});}catch(e){toast('API: '+e.message);}
+  saveLocal();renderLookupUI();toast('Subtype removed');
+}
+function renderHierTree(){
+  const el=document.getElementById('hierTree'); if(!el) return;
+  const hier=lookups.hierarchy||{};
+  if(!Object.keys(hier).length){el.innerHTML='<div style="color:var(--muted);font-size:13px;padding:8px 0">No categories yet.</div>';return;}
+  el.innerHTML=Object.entries(hier).sort(([a],[b])=>a.localeCompare(b)).map(([cat,types])=>{
+    const cid=hId(cat); const catOpen=_hierOpen.cats.has(cat);
+    const typeRows=Object.entries(types).sort(([a],[b])=>a.localeCompare(b)).map(([typ,subs])=>{
+      const tid=cid+'-'+hId(typ); const typOpen=_hierOpen.types.has(cat+'\0'+typ);
+      const subRows=subs.map(sub=>{
+        const sid=tid+'-'+hId(sub);
+        return `<div class="htree-row" id="hs-${sid}">
+          <span style="width:14px;flex-shrink:0"></span>
+          <span class="htree-sub-label">• ${esc(sub)}</span>
+          <input class="fc htree-edit-input" id="hs-edit-${sid}" value="${esc(sub)}">
+          <div class="htree-actions">
+            <button class="btn btn-ghost btn-sm edit-show" title="Rename" onclick="startEdit('hs-${sid}')">✏</button>
+            <button class="btn btn-primary btn-sm edit-save" style="display:none" onclick="saveEditSub('${esc(cat)}','${esc(typ)}','${esc(sub)}')">✓</button>
+            <button class="btn btn-ghost btn-sm edit-cancel" style="display:none" onclick="cancelEdit('hs-${sid}')">✕</button>
+            <button class="btn btn-ghost btn-sm edit-show" title="Remove" onclick="removeSub('${esc(cat)}','${esc(typ)}','${esc(sub)}')">&#10005;</button>
+          </div>
+        </div>`;
+      }).join('');
+      return `<div>
+        <div class="htree-row" id="ht-${tid}">
+          <span class="htree-toggle${typOpen?' open':''}" onclick="toggleHType('${esc(cat)}','${esc(typ)}')">&#9654;</span>
+          <span class="htree-label">${esc(typ)} <span style="font-size:11px;color:var(--muted);font-weight:400">${subs.length}</span></span>
+          <input class="fc htree-edit-input" id="ht-edit-${tid}" value="${esc(typ)}">
+          <div class="htree-actions">
+            <button class="btn btn-ghost btn-sm edit-show" title="Rename" onclick="startEdit('ht-${tid}')">✏</button>
+            <button class="btn btn-primary btn-sm edit-save" style="display:none" onclick="saveEditType('${esc(cat)}','${esc(typ)}')">✓</button>
+            <button class="btn btn-ghost btn-sm edit-cancel" style="display:none" onclick="cancelEdit('ht-${tid}')">✕</button>
+            <button class="btn btn-ghost btn-sm edit-show" title="Add subtype" onclick="showAddSub('${esc(cat)}','${esc(typ)}')">+</button>
+            <button class="btn btn-ghost btn-sm edit-show" title="Remove" onclick="removeType('${esc(cat)}','${esc(typ)}')">&#10005;</button>
+          </div>
+        </div>
+        <div id="ht-ch-${tid}" style="display:${typOpen?'':'none'}">
+          <div class="htree-children">
+            ${subRows}
+            <div class="htree-add-row" id="add-s-${tid}">
+              <input type="text" class="fc" id="new-s-${tid}" placeholder="New subtype…" style="flex:1;font-size:12px" onkeydown="if(event.key==='Enter') confirmAddSub('${esc(cat)}','${esc(typ)}')">
+              <button class="btn btn-primary btn-sm" onclick="confirmAddSub('${esc(cat)}','${esc(typ)}')">Add</button>
+              <button class="btn btn-ghost btn-sm" onclick="cancelAddSub('${esc(cat)}','${esc(typ)}')">&#10005;</button>
+            </div>
+          </div>
+          <button class="htree-add-btn" onclick="showAddSub('${esc(cat)}','${esc(typ)}')">+ Add Subtype</button>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div style="margin-bottom:4px">
+      <div class="htree-row" id="hc-${cid}">
+        <span class="htree-toggle${catOpen?' open':''}" onclick="toggleHCat('${esc(cat)}')">&#9654;</span>
+        <span class="htree-label" style="color:var(--accent)">${CAT_EMOJI[cat]||''} ${esc(cat)} <span style="font-size:11px;color:var(--muted);font-weight:400">${Object.keys(types).length} types</span></span>
+        <input class="fc htree-edit-input" id="hc-edit-${cid}" value="${esc(cat)}">
+        <div class="htree-actions">
+          <button class="btn btn-ghost btn-sm edit-show" title="Rename" onclick="startEdit('hc-${cid}')">✏</button>
+          <button class="btn btn-primary btn-sm edit-save" style="display:none" onclick="saveHCat('${esc(cat)}')">✓</button>
+          <button class="btn btn-ghost btn-sm edit-cancel" style="display:none" onclick="cancelEdit('hc-${cid}')">✕</button>
+          <button class="btn btn-ghost btn-sm edit-show" title="Add type" onclick="showAddType('${esc(cat)}')">+</button>
+          <button class="btn btn-ghost btn-sm edit-show" title="Remove" onclick="removeCategory('${esc(cat)}')">&#10005;</button>
+        </div>
+      </div>
+      <div id="hc-ch-${cid}" style="display:${catOpen?'':'none'}">
+        <div class="htree-children">
+          ${typeRows}
+          <div class="htree-add-row" id="add-t-${cid}">
+            <input type="text" class="fc" id="new-t-${cid}" placeholder="New type…" style="flex:1;font-size:12px" onkeydown="if(event.key==='Enter') confirmAddType('${esc(cat)}')">
+            <button class="btn btn-primary btn-sm" onclick="confirmAddType('${esc(cat)}')">Add</button>
+            <button class="btn btn-ghost btn-sm" onclick="cancelAddType('${esc(cat)}')">&#10005;</button>
+          </div>
+        </div>
+        <button class="htree-add-btn" onclick="showAddType('${esc(cat)}')">+ Add Type</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function renderLookupUI(){
+  const cats=getCats();
+  const cl=document.getElementById('categoryList');
+  if(cl) cl.innerHTML=cats.map(c=>`
+    <div class="list-item" id="cat-li-${c}">
+      <span class="list-item-label">${esc(c)}</span>
+      <input class="fc list-item-edit" id="cat-edit-${c}" value="${esc(c)}" style="font-size:13px;padding:4px 8px">
+      <div class="list-item-btns">
+        <button class="btn btn-ghost btn-sm edit-show" onclick="startEditCat('${esc(c)}')">✏</button>
+        <button class="btn btn-primary btn-sm edit-save" style="display:none" onclick="saveEditCat('${esc(c)}')">✓</button>
+        <button class="btn btn-ghost btn-sm edit-cancel" style="display:none" onclick="cancelEdit('cat-li-${c}')">✕</button>
+        <button class="btn btn-ghost btn-sm edit-show" onclick="removeCategory('${esc(c)}')">&#10005;</button>
+      </div>
+    </div>`).join('');
+  populateCategoryDropdowns();
+  const bl=document.getElementById('brandList');
+  if(bl) bl.innerHTML=(lookups.brands||[]).map(b=>`
+    <div class="list-item" id="brand-li-${b}">
+      <span class="list-item-label">${esc(b)}</span>
+      <input class="fc list-item-edit" id="brand-edit-${b}" value="${esc(b)}" style="font-size:13px;padding:4px 8px">
+      <div class="list-item-btns">
+        <button class="btn btn-ghost btn-sm edit-show" onclick="startEditBrand('${esc(b)}')">✏</button>
+        <button class="btn btn-primary btn-sm edit-save" style="display:none" onclick="saveEditBrand('${esc(b)}')">✓</button>
+        <button class="btn btn-ghost btn-sm edit-cancel" style="display:none" onclick="cancelEdit('brand-li-${b}')">✕</button>
+        <button class="btn btn-ghost btn-sm edit-show" onclick="removeBrand('${esc(b)}')">✕</button>
+      </div>
+    </div>`).join('');
+  renderHierTree();
+}
+function getCats(){return Object.keys(lookups.hierarchy||{}).sort();}
+function populateCategoryDropdowns(){
+  const cats=getCats();
+  ['fCategory','fCat'].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    const cur=el.value;
+    el.innerHTML=id==='fCat'?'<option value="">All Categories</option>':'<option value="">&#8212; select &#8212;</option>';
+    cats.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;if(c===cur)o.selected=true;el.appendChild(o);});
+  });
+  CATS.length=0; cats.forEach(c=>CATS.push(c));
+}
+async function addCategory(){
+  const v=document.getElementById('newCategory').value.trim(); if(!v) return;
+  if(lookups.hierarchy[v]){toast('Category already exists');return;}
+  try{if(getApiUrl()) await api('addCategory',{category:v});}catch(e){toast('API: '+e.message);}
+  lookups.hierarchy[v]={}; saveLocal(); document.getElementById('newCategory').value=''; renderLookupUI(); toast('Category added');
+}
+function removeCategory(cat){
+  if(!confirm('Remove category "'+cat+'" and all its types?')) return;
+  delete lookups.hierarchy[cat]; _hierOpen.cats.delete(cat); saveLocal(); renderLookupUI(); toast('Category removed');
+}
+async function addBrand(){
+  const v=document.getElementById('newBrand').value.trim(); if(!v) return;
+  if(lookups.brands.includes(v)){toast('Brand already exists');return;}
+  try{if(getApiUrl()) await api('addBrand',{brand:v});}catch(e){toast('API: '+e.message);}
+  lookups.brands.push(v);lookups.brands.sort();saveLocal();document.getElementById('newBrand').value='';renderLookupUI();toast('Brand added');
+}
+function removeBrand(b){lookups.brands=lookups.brands.filter(x=>x!==b);saveLocal();renderLookupUI();}
+function removeType(cat,typ){
+  if(!confirm(`Remove type "${typ}" from ${cat}?`)) return;
+  delete lookups.hierarchy[cat][typ]; _hierOpen.types.delete(cat+'\0'+typ); saveLocal(); renderLookupUI();
+}
+
+// ════ UTILS ════
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+['addOverlay','detailOverlay','returnOverlay','lendOverlay','addTripOverlay','tripItemPickerOverlay'].forEach(id=>{document.getElementById(id).addEventListener('click',e=>{if(e.target===e.currentTarget) closeModal(id);});});
+let toastTimer;
+function toast(msg,dur=2500){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),dur);}
+async function loadAll(){document.getElementById('spin-all').style.display='';try{await connectAndLoad();}catch(e){}document.getElementById('spin-all').style.display='none';}
+function toggleSidebar(){const sb=document.getElementById('sidebar');const ov=document.getElementById('sidebarOverlay');const o=sb.classList.contains('open');if(o){sb.classList.remove('open');ov.classList.remove('open');}else{sb.classList.add('open');ov.classList.add('open');}}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}
+
+// ════ INIT ════
+loadLocal();
+renderAll();renderLookupUI();
+if(getApiUrl()) connectAndLoad();
+</script>
+
+<button id="fab" class="fab" onclick="openAddModal()" title="Add Gear">+</button>
+<nav class="mobile-nav">
+  <div class="mobile-nav-items">
+    <button class="mnav-item active" data-sec="all" onclick="showSec('all')"><span>&#128193;</span><span>All</span></button>
+    <button class="mnav-item" data-sec="lent" onclick="showSec('lent')"><span>&#129309;</span><span>Lent</span><span class="mnav-badge" id="mb-lent" style="display:none"></span></button>
+    <button class="mnav-item" data-sec="trips" onclick="showSec('trips')"><span>&#128506;</span><span>Trips</span><span class="mnav-badge" id="mb-trips" style="display:none"></span></button>
+    <button class="mnav-item" data-sec="inspection" onclick="showSec('inspection')"><span>&#128269;</span><span>Inspect</span></button>
+    <button class="mnav-item" data-sec="statistics" onclick="showSec('statistics')"><span>&#128202;</span><span>Stats</span></button>
+    <button class="mnav-item" data-sec="settings" onclick="showSec('settings')"><span>&#9881;&#65039;</span><span>Settings</span></button>
+  </div>
+</nav>
+</body>
+</html>
