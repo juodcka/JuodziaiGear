@@ -367,6 +367,14 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
 .picker-row.disabled{opacity:.45;pointer-events:none}
 .picker-conflict{font-size:11px;color:var(--warn);display:block}
 .picker-search{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface2)}
+.picker-group-header{background:var(--surface2);font-weight:600;cursor:pointer;user-select:none}
+.picker-group-header:hover{background:var(--border)}
+.picker-group-toggle{transition:transform .15s;display:inline-flex;flex-shrink:0}
+.picker-group-header.open .picker-group-toggle{transform:rotate(90deg)}
+.picker-sub-rows{display:none}
+.picker-group-header.open+.picker-sub-rows{display:block}
+.picker-sub-row{padding-left:36px}
+.picker-group-count{font-size:11px;font-weight:700;color:var(--muted);background:var(--border);border-radius:10px;padding:1px 7px;margin-left:4px}
 /* ── Login screen ── */
 #login-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;z-index:9999}
 .login-logo{font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:5px;color:var(--text)}
@@ -1744,6 +1752,25 @@ function openTripItemPicker(trip_id){
   populatePickerList('');
   document.getElementById('tripItemPickerOverlay').classList.add('open');
 }
+function _pickerItemHTML(item,t,extraClass=''){
+  const already=t.gear_ids.includes(item.gear_id);
+  const lentConflict=!already&&isItemLentDuring(item.gear_id,t.start_date,t.end_date);
+  const tripConflict=!already&&!lentConflict&&isItemInTripDuring(item.gear_id,t.start_date,t.end_date,t.trip_id);
+  const disabled=lentConflict||tripConflict;
+  if(document.getElementById('pickerAvailOnly')?.checked&&disabled&&!already) return '';
+  const conflictMsg=lentConflict?'Lent during this period':tripConflict?'In another trip':'';
+  const _pEmoji=CAT_EMOJI[item.category]||'🎒';
+  const emoji=item.photo_url&&safeUrl(item.photo_url)?`<img src="${safeUrl(item.photo_url)}" style="width:32px;height:32px;border-radius:6px;object-fit:cover" onerror="this.style.display='none';this.nextSibling.style.display=''"><span style="display:none;font-size:20px">${_pEmoji}</span>`:`<span style="font-size:20px">${_pEmoji}</span>`;
+  return `<div class="picker-row${disabled?' disabled':''}${extraClass?' '+extraClass:''}">
+    <input type="checkbox" class="picker-cb" data-id="${esc(item.gear_id)}"${already?' checked disabled':disabled?' disabled':''}>
+    ${emoji}
+    <div style="flex:1;min-width:0">
+      <div style="font-weight:600;font-size:14px">${esc(item.name)}${already?' <span style="color:var(--muted);font-size:11px">(already added)</span>':''}</div>
+      <div style="color:var(--muted);font-size:12px">${esc(item.brand||'')}${item.weight_g?' · '+fmtWeight(parseFloat(item.weight_g)):''}</div>
+      ${conflictMsg?`<div class="picker-conflict">${esc(conflictMsg)}</div>`:''}
+    </div>
+  </div>`;
+}
 function populatePickerList(search){
   const t=trips.find(x=>x.trip_id===_pickerTripId);
   if(!t) return;
@@ -1751,25 +1778,51 @@ function populatePickerList(search){
   const active=items.filter(i=>i.status!=='retired'&&(!s||(i.name||'').toLowerCase().includes(s)||(i.brand||'').toLowerCase().includes(s)));
   const el=document.getElementById('pickerList');
   if(!active.length){el.innerHTML='<div style="padding:16px;text-align:center;color:var(--muted)">No items found</div>';return;}
-  el.innerHTML=active.map(item=>{
-    const already=t.gear_ids.includes(item.gear_id);
-    const lentConflict=!already&&isItemLentDuring(item.gear_id,t.start_date,t.end_date);
-    const tripConflict=!already&&!lentConflict&&isItemInTripDuring(item.gear_id,t.start_date,t.end_date,t.trip_id);
-    const disabled=lentConflict||tripConflict;
-    if(document.getElementById('pickerAvailOnly')?.checked && disabled && !already) return '';
-    const conflictMsg=lentConflict?'Lent during this period':tripConflict?'In another trip':'';
-    const _pEmoji=CAT_EMOJI[item.category]||'🎒';
-    const emoji=item.photo_url&&safeUrl(item.photo_url)?`<img src="${safeUrl(item.photo_url)}" style="width:32px;height:32px;border-radius:6px;object-fit:cover" onerror="this.style.display='none';this.nextSibling.style.display=''"><span style="display:none;font-size:20px">${_pEmoji}</span>`:`<span style="font-size:20px">${_pEmoji}</span>`;
-    return `<div class="picker-row${disabled?' disabled':''}">
-      <input type="checkbox" class="picker-cb" data-id="${esc(item.gear_id)}"${already?' checked disabled':disabled?' disabled':''}>
+  const groups=groupItems(active);
+  el.innerHTML=groups.map((group,gi)=>{
+    if(group.length===1) return _pickerItemHTML(group[0],t);
+    // Multi-item group
+    const gid='grp-'+gi;
+    const rep=group[0];
+    const _pEmoji=CAT_EMOJI[rep.category]||'🎒';
+    const emoji=rep.photo_url&&safeUrl(rep.photo_url)?`<img src="${safeUrl(rep.photo_url)}" style="width:32px;height:32px;border-radius:6px;object-fit:cover" onerror="this.style.display='none';this.nextSibling.style.display=''"><span style="display:none;font-size:20px">${_pEmoji}</span>`:`<span style="font-size:20px">${_pEmoji}</span>`;
+    const totalW=group.reduce((s,i)=>s+(parseFloat(i.weight_g)||0),0);
+    const allAlready=group.every(i=>t.gear_ids.includes(i.gear_id));
+    const someAlready=!allAlready&&group.some(i=>t.gear_ids.includes(i.gear_id));
+    const allDisabled=group.every(i=>{
+      const already=t.gear_ids.includes(i.gear_id);
+      return already||isItemLentDuring(i.gear_id,t.start_date,t.end_date)||isItemInTripDuring(i.gear_id,t.start_date,t.end_date,t.trip_id);
+    });
+    const subRowsHTML=group.map(item=>_pickerItemHTML(item,t,'picker-sub-row')).join('');
+    const headerHTML=`<div class="picker-row picker-group-header" id="pgh-${gid}" onclick="togglePickerGroup('${gid}')">
+      <span class="picker-group-toggle">${IC.chevR}</span>
+      <input type="checkbox" class="picker-group-cb" data-group="${gid}"${allAlready?' checked':allDisabled?' disabled':''} onclick="event.stopPropagation()">
       ${emoji}
       <div style="flex:1;min-width:0">
-        <div style="font-weight:600;font-size:14px">${esc(item.name)}${already?' <span style="color:var(--muted);font-size:11px">(already added)</span>':''}</div>
-        <div style="color:var(--muted);font-size:12px">${esc(item.brand||'')}${item.weight_g?' · '+fmtWeight(parseFloat(item.weight_g)):''}</div>
-        ${conflictMsg?`<div class="picker-conflict">${esc(conflictMsg)}</div>`:''}
+        <div style="font-size:14px">${esc(rep.name)}<span class="picker-group-count">×${group.length}</span></div>
+        <div style="color:var(--muted);font-size:12px">${esc(rep.brand||'')}${rep.subtype?' · '+esc(rep.subtype):''}${totalW?' · '+fmtWeight(totalW):''}</div>
       </div>
     </div>`;
+    return headerHTML+`<div class="picker-sub-rows">${subRowsHTML}</div>`;
   }).join('');
+  // Wire up group checkboxes
+  el.querySelectorAll('.picker-group-cb').forEach(gcb=>{
+    const gid=gcb.dataset.group;
+    // set indeterminate if partial
+    const subCbs=[...el.querySelectorAll(`.picker-cb[data-id]`)].filter(cb=>{
+      const row=cb.closest('.picker-sub-rows');
+      return row&&row.previousElementSibling&&row.previousElementSibling.id==='pgh-'+gid;
+    });
+    const checkedCount=subCbs.filter(c=>c.checked).length;
+    if(checkedCount>0&&checkedCount<subCbs.length) gcb.indeterminate=true;
+    gcb.addEventListener('change',()=>{
+      subCbs.filter(c=>!c.disabled).forEach(cb=>{cb.checked=gcb.checked;});
+    });
+  });
+}
+function togglePickerGroup(gid){
+  const hdr=document.getElementById('pgh-'+gid);
+  if(hdr) hdr.classList.toggle('open');
 }
 function filterPickerList(){
   populatePickerList(document.getElementById('pickerSearch').value);
