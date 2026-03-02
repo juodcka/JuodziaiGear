@@ -8,6 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
 <style>
 :root {
   --bg:#f2f0e8; --surface:#fdfcf8; --surface2:#ece9de; --border:#d0ccbb;
@@ -351,10 +352,35 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
 .picker-row.disabled{opacity:.45;pointer-events:none}
 .picker-conflict{font-size:11px;color:var(--warn);display:block}
 .picker-search{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:var(--surface2)}
+/* ── Login screen ── */
+#login-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;z-index:9999}
+.login-logo{font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:5px;color:var(--text)}
+.login-logo span{color:var(--warn)}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:36px 40px;display:flex;flex-direction:column;align-items:center;gap:20px;box-shadow:0 4px 24px rgba(0,0,0,.08);min-width:300px}
+.login-card h2{font-size:16px;font-weight:600;color:var(--muted);text-align:center}
+.btn-google{display:flex;align-items:center;gap:10px;background:#fff;color:#3c4043;border:1px solid #dadce0;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:600;cursor:pointer;transition:box-shadow .15s}
+.btn-google:hover{box-shadow:0 2px 8px rgba(0,0,0,.18)}
+.btn-google svg{flex-shrink:0}
+/* ── User info in header ── */
+.user-chip{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted)}
+.user-chip img{width:26px;height:26px;border-radius:50%;object-fit:cover}
 </style>
 </head>
 <body>
 
+<div id="login-screen">
+  <div class="login-logo">Juodžiai<span>Gear</span></div>
+  <div class="login-card">
+    <h2>Sign in to continue</h2>
+    <button class="btn-google" id="google-sign-in-btn">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.2l6.8-6.8C35.8 2.4 30.2 0 24 0 14.6 0 6.6 5.3 2.6 13l7.9 6.1C12.4 13 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.9 7.2l7.6 5.9c4.4-4.1 7.1-10.1 7.1-17.1z"/><path fill="#FBBC05" d="M10.5 28.6A14.6 14.6 0 0 1 9.5 24c0-1.6.3-3.2.8-4.7l-7.9-6.1A24 24 0 0 0 0 24c0 3.8.9 7.4 2.5 10.6l8-6z"/><path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.6-5.9c-2 1.4-4.7 2.2-7.6 2.2-6.2 0-11.5-4.2-13.4-9.8l-8 6.2C6.5 42.6 14.6 48 24 48z"/></svg>
+      Sign in with Google
+    </button>
+    <div id="login-error" style="color:var(--danger);font-size:12px;display:none"></div>
+  </div>
+</div>
+
+<div id="app-shell" style="display:none">
 <div class="conn-bar">
   <div class="conn-dot" id="connDot"></div>
   <span id="connLabel">Connecting to Firebase...</span>
@@ -373,6 +399,11 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
       <button class="vbtn active" id="vTable" title="Table view" onclick="setView('table')">&#9776;</button>
     </div>
     <button class="btn btn-primary" onclick="openAddModal()">+ Add Gear</button>
+    <div class="user-chip">
+      <img id="user-photo" src="" alt="" style="display:none">
+      <span id="user-name"></span>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="signOut()" title="Sign out">Sign out</button>
   </div>
 </header>
 
@@ -2499,10 +2530,43 @@ async function loadAll(){document.getElementById('spin-all').style.display='';tr
 function toggleSidebar(){const sb=document.getElementById('sidebar');const ov=document.getElementById('sidebarOverlay');const o=sb.classList.contains('open');if(o){sb.classList.remove('open');ov.classList.remove('open');}else{sb.classList.add('open');ov.classList.add('open');}}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}
 
+// ════ AUTH ════
+// Security is enforced server-side by Firestore rules (see firestore.rules).
+// Client only checks whether a user is signed in at all.
+const _auth = firebase.auth();
+
+_auth.onAuthStateChanged(user => {
+  const shell = document.getElementById('app-shell');
+  const loginScreen = document.getElementById('login-screen');
+  if (user) {
+    loginScreen.style.display = 'none';
+    shell.style.display = '';
+    const nameEl = document.getElementById('user-name');
+    const photoEl = document.getElementById('user-photo');
+    if (nameEl) nameEl.textContent = user.displayName || user.email;
+    if (photoEl && user.photoURL) { photoEl.src = user.photoURL; photoEl.style.display = ''; }
+    loadLocal(); renderAll(); renderLookupUI();
+    connectAndLoad();
+  } else {
+    shell.style.display = 'none';
+    loginScreen.style.display = '';
+  }
+});
+
+document.getElementById('google-sign-in-btn').addEventListener('click', () => {
+  const errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
+  const provider = new firebase.auth.GoogleAuthProvider();
+  _auth.signInWithPopup(provider).catch(err => {
+    errEl.textContent = err.message;
+    errEl.style.display = '';
+  });
+});
+
+function signOut() { _auth.signOut(); }
+
 // ════ INIT ════
-loadLocal();
-renderAll();renderLookupUI();
-if(getApiUrl()) connectAndLoad();
+// Auth state listener above drives all loading
 </script>
 
 <button id="fab" class="fab" onclick="openAddModal()" title="Add Gear">+</button>
@@ -2516,5 +2580,6 @@ if(getApiUrl()) connectAndLoad();
     <button class="mnav-item" data-sec="settings" onclick="showSec('settings')"><span>&#9881;&#65039;</span><span>Settings</span></button>
   </div>
 </nav>
+</div><!-- /app-shell -->
 </body>
 </html>
