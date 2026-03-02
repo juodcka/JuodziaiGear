@@ -308,6 +308,12 @@ textarea.fc{resize:vertical;min-height:70px}
   .mobile-nav{display:block}
   .fab{display:flex}
   .conn-bar .conn-url{display:none}
+  /* Hide header items that don't fit on small screens */
+  .hdr-add-btn{display:none}
+  .view-toggle{display:none}
+  #user-name{display:none !important}
+  .hdr-signout-text{display:none}
+  .hdr-signout-icon{display:inline}
   .form-grid{grid-template-columns:1fr}
   .stats{grid-template-columns:repeat(2,1fr)}
   .detail-grid{grid-template-columns:1fr}
@@ -364,6 +370,7 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
 /* ── User info in header ── */
 .user-chip{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted)}
 .user-chip img{width:26px;height:26px;border-radius:50%;object-fit:cover}
+.hdr-signout-icon{display:none}
 </style>
 </head>
 <body>
@@ -398,12 +405,12 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
       <button class="vbtn" id="vCard" title="Card view" onclick="setView('card')">&#9638;</button>
       <button class="vbtn active" id="vTable" title="Table view" onclick="setView('table')">&#9776;</button>
     </div>
-    <button class="btn btn-primary" onclick="openAddModal()">+ Add Gear</button>
+    <button class="btn btn-primary hdr-add-btn" onclick="openAddModal()">+ Add Gear</button>
     <div class="user-chip">
       <img id="user-photo" src="" alt="" style="display:none">
       <span id="user-name"></span>
     </div>
-    <button class="btn btn-ghost btn-sm" onclick="signOut()" title="Sign out">Sign out</button>
+    <button class="btn btn-ghost btn-sm" onclick="signOut()" title="Sign out"><span class="hdr-signout-text">Sign out</span><span class="hdr-signout-icon" aria-hidden="true">&#x2192;</span></button>
   </div>
 </header>
 
