@@ -371,6 +371,17 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
 .user-chip{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted)}
 .user-chip img{width:26px;height:26px;border-radius:50%;object-fit:cover}
 .hdr-signout-icon{display:none}
+/* ── Trip detail action buttons ── */
+.trip-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+@media(max-width:720px){
+  .trip-actions .btn{padding:4px 8px;font-size:12px}
+  .trip-actions .btn .btn-label-long{display:none}
+  .trip-actions .btn .btn-label-short{display:inline}
+}
+@media(min-width:721px){
+  .trip-actions .btn .btn-label-short{display:none}
+  .trip-actions .btn .btn-label-long{display:inline}
+}
 </style>
 </head>
 <body>
@@ -519,7 +530,7 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
         <div class="page-header">
           <button class="btn btn-ghost btn-sm" onclick="backToTrips()">&#8592; Back</button>
           <div id="tripDetailTitle" class="page-title"></div>
-          <div id="tripDetailActions" style="display:flex;gap:8px"></div>
+          <div id="tripDetailActions" class="trip-actions"></div>
         </div>
         <div id="tripDetailContent"></div>
       </div>
@@ -1503,16 +1514,17 @@ function renderTripDetail(id){
   const actEl=document.getElementById('tripDetailActions');
   const statusLabel={planned:'Planned',in_progress:'In Progress',ended:'Ended'}[t.status]||t.status;
   const tagClass={planned:'tag-planned',in_progress:'tag-in_progress',ended:'tag-ended'}[t.status]||'';
+  const L=(long,short)=>`<span class="btn-label-long">${long}</span><span class="btn-label-short">${short}</span>`;
   let actBtns=`<span class="tag ${tagClass}">${statusLabel}</span>`;
-  actBtns+=`<button class="btn btn-ghost btn-sm" onclick="openEditTrip('${esc(id)}')">Edit</button>`;
-  actBtns+=`<button class="btn btn-ghost btn-sm" onclick="duplicateTrip('${esc(id)}')">⧉ Copy</button>`;
-  actBtns+=`<button class="btn btn-ghost btn-sm" onclick="printTripList('${esc(id)}')">🖨 Print</button>`;
-  actBtns+=`<button class="btn ${_packingMode?'btn-primary':'btn-ghost'} btn-sm" onclick="togglePackingMode('${esc(id)}')">${_packingMode?'✓ Packing':'Pack'}</button>`;
-  if(t.status!=='ended') actBtns+=`<button class="btn btn-ghost btn-sm" onclick="endTrip('${esc(id)}')">End Trip</button>`;
-  actBtns+=`<button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteTrip('${esc(id)}')">Delete</button>`;
+  actBtns+=`<button class="btn btn-ghost btn-sm" onclick="openEditTrip('${esc(id)}')">${L('Edit','✏️')}</button>`;
+  actBtns+=`<button class="btn btn-ghost btn-sm" onclick="duplicateTrip('${esc(id)}')">${L('⧉ Copy','⧉')}</button>`;
+  actBtns+=`<button class="btn btn-ghost btn-sm" onclick="printTripList('${esc(id)}')">${L('🖨 Print','🖨')}</button>`;
+  actBtns+=`<button class="btn ${_packingMode?'btn-primary':'btn-ghost'} btn-sm" onclick="togglePackingMode('${esc(id)}')">${L(_packingMode?'✓ Packing':'Pack',_packingMode?'✓':'📦')}</button>`;
+  if(t.status!=='ended') actBtns+=`<button class="btn btn-ghost btn-sm" onclick="endTrip('${esc(id)}')">${L('End Trip','End')}</button>`;
+  actBtns+=`<button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteTrip('${esc(id)}')">${L('Delete','🗑')}</button>`;
   actEl.innerHTML=actBtns;
   const gearItems=t.gear_ids.map(gid=>items.find(i=>i.gear_id===gid)).filter(Boolean);
-  gearItems.sort((a,b)=>(a.type||'').localeCompare(b.type||''));
+  gearItems.sort((a,b)=>(a.subtype||'').localeCompare(b.subtype||'')||(a.name||'').localeCompare(b.name||''));
   const totalW=gearItems.reduce((s,i)=>s+(parseFloat(i.weight_g)||0),0);
   let html=`<div class="trip-detail-stats">
     <div class="trip-stat"><div class="trip-stat-val">${gearItems.length}</div><div class="trip-stat-lbl">Items</div></div>
@@ -1541,7 +1553,7 @@ function renderTripDetail(id){
       const safePhoto=safeUrl(item.photo_url);
       const photoCell=safePhoto?`<img src="${safePhoto}" onerror="this.parentElement.innerHTML='${emoji}'" alt="">`:emoji;
       const removeBtn=t.status!=='ended'?`<button class="btn btn-ghost btn-sm icon-btn" onclick="removeItemFromTrip('${esc(id)}','${esc(item.gear_id)}')" title="Remove">&#10005;</button>`:'';
-      const meta=[item.type,item.subtype,item.weight_g?fmtWeight(parseFloat(item.weight_g)):null].filter(Boolean).join(' · ');
+      const meta=[item.subtype,item.weight_g?fmtWeight(parseFloat(item.weight_g)):null].filter(Boolean).join(' · ');
       const isChecked=!!_packingChecked[item.gear_id];
       const firstCell=_packingMode
         ?`<td onclick="togglePackItem('${esc(item.gear_id)}','${esc(id)}')" style="cursor:pointer;text-align:center;font-size:22px;user-select:none">${isChecked?'✅':'⬜'}</td>`
@@ -1613,7 +1625,7 @@ function duplicateTrip(id){
 function printTripList(tripId){
   const t=trips.find(x=>x.trip_id===tripId); if(!t) return;
   const gearItems=t.gear_ids.map(gid=>items.find(i=>i.gear_id===gid)).filter(Boolean);
-  gearItems.sort((a,b)=>(a.type||'').localeCompare(b.type||''));
+  gearItems.sort((a,b)=>(a.subtype||'').localeCompare(b.subtype||'')||(a.name||'').localeCompare(b.name||''));
   const totalW=gearItems.reduce((s,i)=>s+(parseFloat(i.weight_g)||0),0);
   const rows=gearItems.map(i=>`<tr><td>${esc(i.name)}</td><td>${esc(i.brand||'')}</td><td>${esc(i.type||'')}</td><td>${i.weight_g?fmtWeight(parseFloat(i.weight_g)):'—'}</td><td></td></tr>`).join('');
   const html=`<html><head><title>${esc(t.name)}</title><style>body{font-family:sans-serif;padding:20px}h1{font-size:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:6px 10px;text-align:left;font-size:13px}th{background:#f0f0f0}tfoot td{font-weight:700}</style></head><body><h1>${esc(t.name)}</h1><p>${t.start_date||''}${t.end_date?' – '+t.end_date:''} &nbsp;·&nbsp; ${gearItems.length} items &nbsp;·&nbsp; ${totalW?fmtWeight(totalW):'—'}</p><table><thead><tr><th>Item</th><th>Brand</th><th>Type</th><th>Weight</th><th>✓</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><td colspan="3">Total</td><td>${fmtWeight(totalW)}</td><td></td></tr></tfoot></table></body></html>`;
