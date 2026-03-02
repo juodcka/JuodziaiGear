@@ -170,7 +170,7 @@ textarea.fc{resize:vertical;min-height:70px}
 .htree-add-row.open{display:flex}
 .htree-add-btn{background:none;border:none;color:var(--accent);font-size:12px;cursor:pointer;padding:4px 0;text-align:left;font-family:inherit;opacity:.8}
 .htree-add-btn:hover{opacity:1}
-.conn-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:8px 24px;display:flex;align-items:center;gap:12px;font-size:12px;color:var(--muted)}
+/* .conn-bar removed — status dot moved to header */
 .conn-dot{width:8px;height:8px;border-radius:50%;background:#ccc;flex-shrink:0}
 .conn-dot.connected{background:#3a7d44}
 .conn-dot.error{background:var(--danger)}
@@ -307,7 +307,7 @@ textarea.fc{resize:vertical;min-height:70px}
   .main{padding:14px;padding-bottom:calc(80px + env(safe-area-inset-bottom,0px))}
   .mobile-nav{display:block}
   .fab{display:flex}
-  .conn-bar .conn-url{display:none}
+
   /* Hide header items that don't fit on small screens */
   .hdr-add-btn{display:none}
   .view-toggle{display:none}
@@ -404,12 +404,6 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
 </div>
 
 <div id="app-shell" style="display:none">
-<div class="conn-bar">
-  <div class="conn-dot" id="connDot"></div>
-  <span id="connLabel">Connecting to Firebase...</span>
-  <button class="btn btn-ghost btn-sm" onclick="connectAndLoad()" style="margin-left:auto">&#8635; Reload</button>
-</div>
-
 <header>
   <div style="display:flex;align-items:center;gap:12px">
     <button class="hamburger" onclick="toggleSidebar()" title="Menu">&#8801;</button>
@@ -423,10 +417,11 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
     </div>
     <button class="btn btn-primary hdr-add-btn" onclick="openAddModal()">+ Add Gear</button>
     <div class="user-chip">
+      <div class="conn-dot" id="connDot"></div>
       <img id="user-photo" src="" alt="" style="display:none">
       <span id="user-name"></span>
     </div>
-    <button class="btn btn-ghost btn-sm" onclick="signOut()" title="Sign out"><span class="hdr-signout-text">Sign out</span><span class="hdr-signout-icon" aria-hidden="true">&#x2192;</span></button>
+    <button class="btn btn-ghost btn-sm" onclick="signOut()" title="Sign out"><span class="hdr-signout-text">Sign out</span><span class="hdr-signout-icon" aria-hidden="true">&#x23FB;</span></button>
   </div>
 </header>
 
@@ -1032,7 +1027,7 @@ async function connectAndLoad(){
 function setConnStatus(state,msg){
   const dot=document.getElementById('connDot');
   dot.className='conn-dot '+(state==='connected'?'connected':state==='loading'?'loading':'error');
-  document.getElementById('connLabel').textContent=msg;
+  dot.title=msg;
 }
 
 // ════ VIEW/SORT/SECTION ════
