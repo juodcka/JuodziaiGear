@@ -56,8 +56,10 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 .page-title small{display:block;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);font-weight:300;letter-spacing:0;margin-top:3px}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+.stat-card.retired{background:#f5f5f5;border-color:#d8d8d8}
 .stat-value{font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:1px;line-height:1;color:var(--accent)}
 .stat-value.warn{color:var(--warn)}
+.stat-value.muted{color:#999}
 .stat-label{font-size:11px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:1px}
 .filter-bar{display:flex;gap:8px;margin-bottom:8px;align-items:center}
 .filter-toggle{display:flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0}
@@ -456,7 +458,7 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
         <div class="stat-card"><div class="stat-value" id="st-total">&#8212;</div><div class="stat-label">Total Items</div></div>
         <div class="stat-card"><div class="stat-value warn" id="st-lent">&#8212;</div><div class="stat-label">Lent Out</div></div>
         <div class="stat-card"><div class="stat-value" id="st-brands">&#8212;</div><div class="stat-label">Brands</div></div>
-        <div class="stat-card"><div class="stat-value" id="st-retired">&#8212;</div><div class="stat-label">Retired</div></div>
+        <div class="stat-card retired"><div class="stat-value muted" id="st-retired">&#8212;</div><div class="stat-label">Retired</div></div>
       </div>
       <div class="filter-bar">
         <input type="text" class="fi" id="searchInput" placeholder="&#128269; Search&hellip;" oninput="renderAll()" style="flex:1;min-width:0">
@@ -1480,7 +1482,7 @@ function updateBadges(){
   const f=getFiltered();
   document.getElementById('st-total').textContent=f.filter(i=>i.status!=='retired').length;
   document.getElementById('st-lent').textContent=f.filter(i=>i.status==='lent').length;
-  document.getElementById('st-retired').textContent=f.filter(i=>i.status==='retired').length;
+  document.getElementById('st-retired').textContent=items.filter(i=>i.status==='retired').length;
   document.getElementById('st-brands').textContent=new Set(f.map(i=>i.brand).filter(Boolean)).size;
   const lc=items.filter(i=>i.status==='lent').length;
   const mb=document.getElementById('mb-lent');
