@@ -499,6 +499,7 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
           <th onclick="sortBy('category')" id="th-category">Category <span class="sort-arrow" id="sa-category"></span></th>
           <th onclick="sortBy('type')" id="th-type">Type <span class="sort-arrow" id="sa-type"></span></th>
           <th onclick="sortBy('subtype')" id="th-subtype">Subtype <span class="sort-arrow" id="sa-subtype"></span></th>
+          <th onclick="sortBy('weight_g')" id="th-weight_g">Weight <span class="sort-arrow" id="sa-weight_g"></span></th>
           <th onclick="sortBy('date_purchased')" id="th-date_purchased">Purchased <span class="sort-arrow" id="sa-date_purchased"></span></th>
           <th onclick="sortBy('date_produced')" id="th-date_produced">Produced <span class="sort-arrow" id="sa-date_produced"></span></th>
           <th onclick="sortBy('status')" id="th-status">Status <span class="sort-arrow" id="sa-status"></span></th>
@@ -1275,6 +1276,7 @@ function tableRowHTML(item,cols){
     category:`<td><span class="tag" style="${getCatTagStyle(item.category)}">${item.category}</span></td>`,
     type:`<td>${esc(item.type)||'—'}</td>`,
     subtype:`<td>${esc(item.subtype)||'—'}</td>`,
+    weight_g:`<td style="color:var(--muted)">${item.weight_g?fmtWeight(parseFloat(item.weight_g)):'—'}</td>`,
     date_purchased:`<td>${item.date_purchased||'—'}</td>`,
     date_produced:`<td>${item.date_produced||'—'}</td>`,
     status:`<td>${statusBadge}</td>`,
@@ -1326,6 +1328,7 @@ function tableRowGroupedHTML(group, cols){
     category:`<td><span class="tag" style="${getCatTagStyle(rep.category)}">${rep.category}</span></td>`,
     type:`<td>${rep.type||'—'}</td>`,
     subtype:`<td>${rep.subtype||'—'}</td>`,
+    weight_g:(()=>{const tw=group.reduce((s,i)=>s+(parseFloat(i.weight_g)||0),0);return`<td style="color:var(--muted)">${tw?fmtWeight(tw):'—'}</td>`})(),
     date_purchased:`<td>—</td>`,
     date_produced:`<td>—</td>`,
     status:`<td>${statusBadge}</td>`,
@@ -1374,7 +1377,7 @@ function renderAll(){
   document.getElementById('allCard').style.display=isc?'':'none';
   document.getElementById('allTable').style.display=isc?'none':'';
   if(isc) document.getElementById('allCard').innerHTML=filtered.length?filtered.map(cardHTML).join(''):emptyHTML('🏔','No gear found','Add your first item or adjust filters');
-  else document.getElementById('allTbody').innerHTML=filtered.length?groupItems(filtered).map(g=>tableRowGroupedHTML(g,['photo','name','brand','category','type','subtype','date_purchased','date_produced','status','actions'])).join(''):emptyRow(9,'No items');
+  else document.getElementById('allTbody').innerHTML=filtered.length?groupItems(filtered).map(g=>tableRowGroupedHTML(g,['photo','name','brand','category','type','subtype','weight_g','date_purchased','date_produced','status','actions'])).join(''):emptyRow(10,'No items');
 
   const ret=applySorted(items.filter(i=>i.status==='retired'));
   document.getElementById('retiredCard').style.display=isc?'':'none';
