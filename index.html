@@ -323,7 +323,6 @@ textarea.fc{resize:vertical;min-height:70px}
   .trips-grid{grid-template-columns:1fr}
   .trip-gear-gtable th:nth-child(3),.trip-gear-gtable th:nth-child(4),.trip-gear-gtable th:nth-child(5),
   .trip-gear-gtable td:nth-child(3),.trip-gear-gtable td:nth-child(4),.trip-gear-gtable td:nth-child(5){display:none}
-  .tg-meta{display:block}
 }
 
 /* ═══════════ TRIPS ═══════════ */
@@ -342,6 +341,7 @@ textarea.fc{resize:vertical;min-height:70px}
 .tag-in_trip{background:var(--muted);color:var(--text);font-weight:600}
 .trip-detail-stats{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px}
 .tg-meta{display:none;font-size:11px;color:var(--muted);margin-top:2px}
+@media(max-width:720px){.tg-meta{display:block}}
 tr.pack-checked td{opacity:.4;text-decoration:line-through}
 tr.pack-checked td:first-child{text-decoration:none;opacity:1}
 .trip-stat{background:var(--surface2);border-radius:8px;padding:12px 18px;min-width:100px}
