@@ -312,7 +312,6 @@ textarea.fc{resize:vertical;min-height:70px}
   .hdr-add-btn{display:none}
   .view-toggle{display:none}
   #user-name{display:none !important}
-  .hdr-signout-text{display:none}
   .hdr-signout-icon{display:inline}
   .form-grid{grid-template-columns:1fr}
   .stats{grid-template-columns:repeat(2,1fr)}
@@ -375,7 +374,8 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
 /* ── User info in header ── */
 .user-chip{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted)}
 .user-chip img{width:26px;height:26px;border-radius:50%;object-fit:cover}
-.hdr-signout-icon{display:none}
+@media(min-width:721px){.hdr-signout-icon{display:none}}
+@media(max-width:720px){.hdr-signout-text{display:none}}
 /* ── Trip detail action buttons ── */
 .trip-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 @media(max-width:720px){
