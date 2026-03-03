@@ -2733,18 +2733,10 @@ async function confirmReturn(){
   saveLocal();closeModal('returnOverlay');toast('Gear marked as returned');renderAll();
 }
 
-let _returnAllArmed=null;
 async function returnAllForPerson(person,lendIds,gearIds){
-  if(_returnAllArmed!==person){
-    _returnAllArmed=person;
-    setTimeout(()=>{_returnAllArmed=null;},4000);
-    toast(`Tap "Return All" again to confirm returning ${gearIds.length} item${gearIds.length>1?'s':''} from ${person}`,4000);
-    return;
-  }
-  _returnAllArmed=null;
   const today=new Date().toISOString().slice(0,10);
   for(let i=0;i<lendIds.length;i++){
-    try{if(getApiUrl()) await api('returnGear',{lend_id:lendIds[i],gear_id:gearIds[i],date_returned:today,condition_on_return:''});}catch(e){toast('API error: '+e.message);break;}
+    try{if(getApiUrl()) await api('returnGear',{lend_id:lendIds[i],gear_id:gearIds[i],date_returned:today,condition_on_return:''});}catch(e){toast('API error: '+e.message);return;}
     const lend=lends.find(l=>l.lend_id===lendIds[i]);if(lend){lend.date_returned=today;lend.condition_on_return='';}
     const item=items.find(it=>it.gear_id===gearIds[i]);if(item) item.status='active';
   }
