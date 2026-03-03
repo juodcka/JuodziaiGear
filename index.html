@@ -140,8 +140,9 @@ textarea.fc{resize:vertical;min-height:70px}
 .detail-name{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;margin-bottom:3px}
 .detail-brand{color:var(--muted);font-size:14px;margin-bottom:8px}
 .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
-.dfl{font-size:11px;color:var(--text);opacity:.55;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
+.dfl{font-size:10px;color:#444;opacity:1;text-transform:uppercase;letter-spacing:.9px;margin-bottom:2px;font-weight:600}
 .dfv{font-size:13px}
+.detail-grid>div{background:#e8e7e1;border-radius:7px;padding:7px 10px}
 .lent-box{background:var(--warn-light);border:1px solid rgba(224,123,0,.2);border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:13px;line-height:1.7}
 .lent-box-title{color:var(--warn);font-weight:700;font-size:11px;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
 .notes-box{background:var(--surface2);border-radius:8px;padding:12px 14px;font-size:13px;color:#555;margin-bottom:14px;line-height:1.6}
@@ -151,7 +152,7 @@ textarea.fc{resize:vertical;min-height:70px}
 .lent-table td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:13px}
 .lent-table tr:last-child td{border-bottom:none}
 .lent-table tr:hover td{background:var(--surface2)}
-.lent-table tr.lent-group-header td{background:var(--surface2);padding:8px 14px;font-size:12px;font-weight:700;letter-spacing:.5px;border-top:2px solid var(--border);color:var(--text);cursor:pointer}
+.lent-table tr.lent-group-header td{background:var(--surface2);padding:8px 14px;font-size:12px;font-weight:700;letter-spacing:.5px;border-top:2px solid var(--border);color:var(--text);cursor:pointer;display:flex;align-items:center;gap:4px}
 .lent-table tr.lent-group-header:hover td{background:var(--accent-light)}
 .lent-table tr.lent-group-header .group-toggle{margin-right:6px}
 .lent-grp-meta{font-size:11px;color:var(--muted);font-weight:400;margin-left:12px}
@@ -1713,7 +1714,7 @@ function renderLent(){
           <td>${esc(lend.date_lent)||'—'}</td>
           <td style="color:${overdue?'var(--danger)':'var(--text)'};font-weight:${overdue?700:400}">${esc(lend.date_due)||'—'}${overdue?' '+IC.warn:''}</td>
           <td>${(()=>{const parts=[];if(lend.notes) parts.push(esc(lend.notes));if(lend.custom_fields&&lend.custom_fields.length) parts.push(lend.custom_fields.map(f=>`<span style="color:var(--muted)">${esc(f.label)}:</span> ${esc(f.value)}`).join(' · '));return parts.join('<br>')||'—';})()}</td>
-          <td><button class="btn btn-warn btn-sm icon-btn" onclick="openReturn('${i.gear_id}')" title="Mark Returned">${IC.ret} Return</button></td>
+          <td><button class="btn btn-warn btn-sm" onclick="openReturn('${i.gear_id}')" title="Mark Returned">${IC.ret} Return</button></td>
         </tr>`;
       });
     }
@@ -2810,7 +2811,8 @@ function openDetail(id){
   const retireMatch=(item.notes||'').match(/^\[Retired:\s*([^\]]+)\]/);
   const retireTag=item.status==='retired'?`<span class="tag tag-retired">Retired${retireMatch?' · '+retireMatch[1]:''}</span>`:'';
   const log=getServiceLog(item);
-  const logHtml=`<div style="margin-top:16px"><div style="font-weight:700;margin-bottom:8px;font-size:13px">Service Log</div>${log.length?log.map(e=>`<div class="slog-entry"><span class="slog-date">${esc(e.date)}</span><span class="slog-type">${esc(e.type)}</span><div style="margin-top:3px">${esc(e.note)}</div></div>`).join(''):'<div style="color:var(--muted);font-size:13px">No entries yet.</div>'}<div class="slog-add"><input type="date" class="fc" id="slogDate" value="${new Date().toISOString().slice(0,10)}" style="font-size:12px"><select class="fc" id="slogType" style="font-size:12px"><option>Inspection</option><option>Fall/Impact</option><option>Service</option><option>Repair</option><option>Note</option></select><input type="text" class="fc" id="slogNote" placeholder="Entry note…" style="grid-column:1/-1;font-size:12px"><button class="btn btn-primary btn-sm" onclick="addServiceLogEntry('${esc(item.gear_id)}')" style="grid-column:1/-1">Add Entry</button></div></div>`;
+  const slogExpanded=curSection==='inspection';
+  const logHtml=`<div style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px"><div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none';this.querySelector('.slog-chev').style.transform=this.nextElementSibling.style.display===''?'rotate(180deg)':'rotate(0deg)'"><div style="font-weight:700;font-size:13px">Service Log${log.length?` <span style="font-size:11px;font-weight:400;color:var(--muted)">(${log.length})</span>`:''}</div><svg class="slog-chev" width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="transition:transform .2s;transform:${slogExpanded?'rotate(180deg)':'rotate(0deg)'}"><polyline points="4,7 10,13 16,7"/></svg></div><div style="display:${slogExpanded?'':'none'};margin-top:8px">${log.length?log.map(e=>`<div class="slog-entry"><span class="slog-date">${esc(e.date)}</span><span class="slog-type">${esc(e.type)}</span><div style="margin-top:3px">${esc(e.note)}</div></div>`).join(''):'<div style="color:var(--muted);font-size:13px">No entries yet.</div>'}<div class="slog-add"><input type="date" class="fc" id="slogDate" value="${new Date().toISOString().slice(0,10)}" style="font-size:12px"><select class="fc" id="slogType" style="font-size:12px"><option>Inspection</option><option>Fall/Impact</option><option>Service</option><option>Repair</option><option>Note</option></select><input type="text" class="fc" id="slogNote" placeholder="Entry note…" style="grid-column:1/-1;font-size:12px"><button class="btn btn-primary btn-sm" onclick="addServiceLogEntry('${esc(item.gear_id)}')" style="grid-column:1/-1">Add Entry</button></div></div></div>`;
   const displayNotes=item.notes?item.notes.replace(/^\[Retired:[^\]]*\]\s*/,''):'';
   document.getElementById('detailContent').innerHTML=`<div class="detail-header">${photo}<div><div class="detail-name">${esc(item.name)}</div><div class="detail-brand">${esc(item.brand)}${item.model?' — '+esc(item.model):''}</div><div class="card-badges"><span class="tag" style="${getCatTagStyle(item.category)}">${item.category}</span>${item.type?`<span class="tag tag-muted">${item.type}</span>`:''}${item.subtype?`<span class="tag tag-muted">${item.subtype}</span>`:''}${item.status==='lent'?'<span class="tag tag-lent">Lent Out</span>':''}${retireTag}</div></div></div>${lentBox}<div class="detail-grid">${fields.map(([l,v])=>`<div><div class="dfl">${l}</div><div class="dfv">${esc(v)}</div></div>`).join('')}</div>${displayNotes?`<div class="dfl" style="margin-bottom:6px">Notes</div><div class="notes-box">${esc(displayNotes)}</div>`:''}${logHtml}`;
   document.getElementById('detailActions').innerHTML=`<button class="btn btn-danger" onclick="deleteItem('${item.gear_id}')">${IC.trash} Delete</button>${item.status==='lent'?`<button class="btn btn-warn" onclick="openReturn('${item.gear_id}')">${IC.ret} Mark Returned</button>`:''}${item.status==='active'?`<button class="btn btn-warn" onclick="closeModal('detailOverlay');quickLend('${item.gear_id}')">${IC.lend} Lend</button>`:''}<button class="btn btn-ghost" onclick="closeModal('detailOverlay');duplicateItem('${item.gear_id}')">${IC.copy} Duplicate</button><button class="btn btn-ghost" onclick="closeModal('detailOverlay')">Close</button><button class="btn btn-primary" onclick="openEdit('${item.gear_id}')">${IC.pencil} Edit</button>`;
