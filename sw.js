@@ -1,6 +1,6 @@
 // JuodziaiGear Service Worker
 // IMPORTANT: Bump CACHE version on every deploy (jg-v1 → jg-v2, etc.)
-const CACHE = 'jg-v11';
+const CACHE = 'jg-v12';
 
 // Use self.location to build paths relative to the SW's own location.
 // This works correctly on both custom domains and GitHub Pages subdirectories.
