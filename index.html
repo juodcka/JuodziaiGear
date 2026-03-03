@@ -183,8 +183,10 @@ textarea.fc{resize:vertical;min-height:70px}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 .conn-url{flex:1}
 .conn-url input{background:transparent;border:none;outline:none;color:var(--text);font-size:12px;width:100%;font-family:'DM Sans',sans-serif}
-.toast{position:fixed;bottom:24px;right:24px;background:var(--text);color:#fff;padding:12px 18px;border-radius:8px;font-size:13px;z-index:9999;transform:translateY(100px);transition:transform .3s;pointer-events:none}
-.toast.show{transform:translateY(0)}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--text);color:#fff;padding:12px 18px;border-radius:8px;font-size:13px;z-index:9999;transform:translateY(100px);transition:transform .3s;pointer-events:none;display:flex;align-items:center;gap:12px}
+.toast.show{transform:translateY(0);pointer-events:auto}
+.toast-undo{background:none;border:1px solid rgba(255,255,255,.5);color:#fff;border-radius:5px;padding:3px 10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.toast-undo:hover{background:rgba(255,255,255,.15)}
 .spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
 @keyframes spin{to{transform:rotate(360deg)}}
 
@@ -356,6 +358,8 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
 .trip-stat{background:var(--surface2);border-radius:8px;padding:12px 18px;min-width:100px}
 .trip-stat-val{font-size:22px;font-weight:700;color:var(--accent)}
 .trip-stat-lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.weight-bar-wrap{height:4px;background:var(--border);border-radius:2px;margin-top:6px;overflow:hidden}
+.weight-bar{height:4px;border-radius:2px;background:var(--accent);transition:width .3s}
 .slog-entry{padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
 .slog-entry:last-child{border-bottom:none}
 .slog-date{font-size:11px;color:var(--muted)}
@@ -375,6 +379,22 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
 .picker-group-header.open+.picker-sub-rows{display:block}
 .picker-sub-row{padding-left:36px}
 .picker-group-count{font-size:11px;font-weight:700;color:var(--muted);background:var(--border);border-radius:10px;padding:1px 7px;margin-left:4px}
+/* ── Global search ── */
+#globalSearchOverlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:none;align-items:flex-start;justify-content:center;padding:60px 16px 16px}
+#globalSearchOverlay.open{display:flex}
+.gsearch-box{background:var(--surface);border-radius:14px;width:100%;max-width:560px;box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden}
+.gsearch-input-wrap{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border)}
+.gsearch-input-wrap svg{flex-shrink:0;color:var(--muted)}
+#globalSearchInput{flex:1;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:15px;background:transparent;color:var(--text)}
+.gsearch-esc{font-size:11px;color:var(--muted);background:var(--surface2);border-radius:4px;padding:2px 6px;white-space:nowrap;cursor:pointer}
+.gsearch-results{max-height:480px;overflow-y:auto}
+.gsearch-section{padding:8px 0}
+.gsearch-section-label{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:6px 16px 4px}
+.gsearch-row{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;transition:background .1s}
+.gsearch-row:hover{background:var(--surface2)}
+.gsearch-row-main{font-size:14px;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gsearch-row-sub{font-size:12px;color:var(--muted);flex-shrink:0}
+.gsearch-empty{padding:32px;text-align:center;color:var(--muted);font-size:14px}
 /* ── Login screen ── */
 #login-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;z-index:9999}
 .login-logo{font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:5px;color:var(--text)}
@@ -403,6 +423,18 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
 </style>
 </head>
 <body>
+
+<!-- GLOBAL SEARCH OVERLAY -->
+<div id="globalSearchOverlay" onclick="if(event.target===this)closeGlobalSearch()">
+  <div class="gsearch-box">
+    <div class="gsearch-input-wrap">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="8.5" cy="8.5" r="5.5"/><line x1="12.5" y1="12.5" x2="17" y2="17"/></svg>
+      <input type="text" id="globalSearchInput" placeholder="Search gear, trips, people…" oninput="runGlobalSearch()" onkeydown="if(event.key==='Escape')closeGlobalSearch()">
+      <span class="gsearch-esc" onclick="closeGlobalSearch()">Esc</span>
+    </div>
+    <div class="gsearch-results" id="globalSearchResults"><div class="gsearch-empty">Start typing to search…</div></div>
+  </div>
+</div>
 
 <div id="login-screen">
   <div class="login-logo">Juodžiai<span>Gear</span></div>
@@ -470,6 +502,17 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
       </div>
       <div class="filter-bar">
         <input type="text" class="fi" id="searchInput" placeholder="&#128269; Search&hellip;" oninput="renderAll()" style="flex:1;min-width:0">
+        <select class="fi btn-sm" id="sortSelect" onchange="onSortSelect()" style="flex-shrink:0;width:auto;padding:5px 8px">
+          <option value="brand|1">Brand ▲</option>
+          <option value="brand|0">Brand ▼</option>
+          <option value="name|1">Name ▲</option>
+          <option value="name|0">Name ▼</option>
+          <option value="category|1">Category ▲</option>
+          <option value="weight_g|1">Weight ▲</option>
+          <option value="weight_g|0">Weight ▼</option>
+          <option value="date_purchased|0">Newest first</option>
+          <option value="date_purchased|1">Oldest first</option>
+        </select>
         <button class="btn btn-ghost btn-sm filter-toggle" id="filterToggleBtn" onclick="toggleFilters()">Filters <span id="filterCount" class="badge" style="display:none"></span> <span class="fa"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,7 10,13 16,7"/></svg></span></button>
       </div>
       <div class="filters" id="filtersRow" style="display:none">
@@ -654,6 +697,18 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
           <div id="tableByBrand"></div>
         </div>
       </div>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title">Weight by Category</div>
+          <div class="chart-subtitle">Total kit weight distribution</div>
+          <div class="chart-wrap"><canvas id="chartWeightCat"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Top 10 Heaviest Items</div>
+          <div class="chart-subtitle">By individual item weight</div>
+          <div id="tableHeaviest"></div>
+        </div>
+      </div>
     </div>
 
     <!-- SETTINGS -->
@@ -679,6 +734,14 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
           <div class="add-row">
             <input type="text" class="fc" id="newBrand" placeholder="Add brand&hellip;" onkeydown="if(event.key==='Enter') addBrand()">
             <button class="btn btn-primary btn-sm" onclick="addBrand()">Add</button>
+          </div>
+        </div>
+        <div class="settings-card" style="grid-column:1/-1">
+          <h3><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v10m0 0l-3-3m3 3l3-3"/><path d="M4 15h12"/></svg> Export Data</h3>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:14px">Download a local backup of all your gear, trips, and lend records.</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" onclick="exportJSON()"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v10m0 0l-3-3m3 3l3-3"/><path d="M4 15h12"/></svg> Download JSON (full backup)</button>
+            <button class="btn btn-ghost btn-sm" onclick="exportCSV()"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v10m0 0l-3-3m3 3l3-3"/><path d="M4 15h12"/></svg> Download CSV (gear list)</button>
           </div>
         </div>
         <div class="settings-card" style="grid-column:1/-1">
@@ -720,7 +783,7 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
       <div class="fg full" id="lentFields" style="display:none">
         <div class="lent-sub-box">
           <div class="form-grid" style="margin:0">
-            <div class="fg"><label class="fl">Lent To</label><input type="text" class="fc" id="fLentTo" placeholder="Person's name"></div>
+            <div class="fg"><label class="fl">Lent To</label><input type="text" class="fc" id="fLentTo" placeholder="Person's name" list="borrowerList" autocomplete="off"></div>
             <div class="fg"><label class="fl">Date Lent</label><input type="date" class="fc" id="fLentDate"></div>
             <div class="fg full"><label class="fl">Expected Return</label><input type="date" class="fc" id="fLentReturn"></div>
           </div>
@@ -754,7 +817,8 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
       <strong id="lGearName" style="font-size:14px"></strong>
     </div>
     <div class="form-grid" style="grid-template-columns:1fr">
-      <div class="fg"><label class="fl">Lent To *</label><input type="text" class="fc" id="lLentTo" placeholder="Person's name"></div>
+      <datalist id="borrowerList"></datalist>
+      <div class="fg"><label class="fl">Lent To *</label><input type="text" class="fc" id="lLentTo" placeholder="Person's name" list="borrowerList" autocomplete="off"></div>
       <div class="fg"><label class="fl">Date Lent</label><input type="date" class="fc" id="lDateLent"></div>
       <div class="fg"><label class="fl">Expected Return Date</label><input type="date" class="fc" id="lDateDue"></div>
       <div class="fg"><label class="fl">Notes</label><input type="text" class="fc" id="lNotes" placeholder="Optional notes"></div>
@@ -790,6 +854,7 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
       <div class="fg"><label class="fl">Trip Name *</label><input type="text" class="fc" id="tripName" placeholder="e.g. Alpine Weekend"></div>
       <div class="fg"><label class="fl">Start Date</label><input type="date" class="fc" id="tripStartDate"></div>
       <div class="fg"><label class="fl">End Date</label><input type="date" class="fc" id="tripEndDate"></div>
+      <div class="fg"><label class="fl">Weight Target (g)</label><input type="number" class="fc" id="tripWeightTarget" placeholder="e.g. 12000" min="0" step="100"></div>
       <div class="fg"><label class="fl">Notes</label><textarea class="fc" id="tripNotes" rows="3" placeholder="Optional notes..."></textarea></div>
     </div>
     <div class="modal-actions">
@@ -813,7 +878,7 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast"><span id="toastMsg"></span><button class="toast-undo" id="toastUndo" style="display:none" onclick="toastUndoClick()">Undo</button></div>
 
 <script>
 // ════ ICONS ════
@@ -1102,6 +1167,23 @@ function sortBy(col){
   document.querySelectorAll('.sort-arrow').forEach(el=>el.textContent='');
   const el=document.getElementById('sa-'+col);
   if(el) el.textContent=sortAsc?'▲':'▼';
+  syncSortSelect();
+  renderAll();
+}
+function syncSortSelect(){
+  const sel=document.getElementById('sortSelect');
+  if(!sel) return;
+  const val=sortCol+'|'+(sortAsc?1:0);
+  if([...sel.options].some(o=>o.value===val)) sel.value=val;
+}
+function onSortSelect(){
+  const sel=document.getElementById('sortSelect');
+  if(!sel) return;
+  const [col,asc]=sel.value.split('|');
+  sortCol=col; sortAsc=asc==='1';
+  document.querySelectorAll('.sort-arrow').forEach(el=>el.textContent='');
+  const el=document.getElementById('sa-'+sortCol);
+  if(el) el.textContent=sortAsc?'▲':'▼';
   renderAll();
 }
 function applySorted(arr){
@@ -1195,9 +1277,39 @@ function onFilterTypeChange(){
   renderAll();
 }
 function openGlobalSearch(){
-  showSec('all');
-  const s=document.getElementById('searchInput');
-  if(s){s.focus();s.select();}
+  const el=document.getElementById('globalSearchOverlay');
+  el.classList.add('open');
+  const inp=document.getElementById('globalSearchInput');
+  inp.value='';
+  document.getElementById('globalSearchResults').innerHTML='<div class="gsearch-empty">Start typing to search…</div>';
+  setTimeout(()=>inp.focus(),50);
+}
+function closeGlobalSearch(){
+  document.getElementById('globalSearchOverlay').classList.remove('open');
+}
+function runGlobalSearch(){
+  const q=(document.getElementById('globalSearchInput').value||'').toLowerCase().trim();
+  const res=document.getElementById('globalSearchResults');
+  if(!q){res.innerHTML='<div class="gsearch-empty">Start typing to search…</div>';return;}
+  let html='';
+  // Gear
+  const gearHits=items.filter(i=>`${i.name} ${i.brand} ${i.type} ${i.subtype} ${i.model}`.toLowerCase().includes(q)).slice(0,8);
+  if(gearHits.length){
+    html+=`<div class="gsearch-section"><div class="gsearch-section-label">Gear</div>${gearHits.map(i=>`<div class="gsearch-row" onclick="closeGlobalSearch();openDetail('${esc(i.gear_id)}')"><span style="font-size:20px">${CAT_EMOJI[i.category]||'🎒'}</span><span class="gsearch-row-main">${esc(i.name)}</span><span class="gsearch-row-sub">${esc(i.brand||'')}${i.subtype?' · '+esc(i.subtype):''}</span></div>`).join('')}</div>`;
+  }
+  // Trips
+  const tripHits=trips.filter(t=>(t.name||'').toLowerCase().includes(q)||(t.notes||'').toLowerCase().includes(q)).slice(0,4);
+  if(tripHits.length){
+    const statusLabel={planned:'Planned',in_progress:'In Progress',ended:'Ended'};
+    html+=`<div class="gsearch-section"><div class="gsearch-section-label">Trips</div>${tripHits.map(t=>`<div class="gsearch-row" onclick="closeGlobalSearch();showSec('trips');openTripDetail('${esc(t.trip_id)}')">${IC.pin}<span class="gsearch-row-main">${esc(t.name)}</span><span class="gsearch-row-sub">${statusLabel[t.status]||t.status} · ${t.gear_ids.length} items</span></div>`).join('')}</div>`;
+  }
+  // Lent — active lends by borrower name or item name
+  const lentHits=lends.filter(l=>!l.date_returned&&(`${l.lent_to} ${l.gear_name}`.toLowerCase().includes(q))).slice(0,4);
+  if(lentHits.length){
+    html+=`<div class="gsearch-section"><div class="gsearch-section-label">Lent Out</div>${lentHits.map(l=>`<div class="gsearch-row" onclick="closeGlobalSearch();showSec('lent')">${IC.send}<span class="gsearch-row-main">${esc(l.gear_name||'')}</span><span class="gsearch-row-sub">→ ${esc(l.lent_to)}${l.date_due?' · due '+esc(l.date_due):''}</span></div>`).join('')}</div>`;
+  }
+  if(!html) html='<div class="gsearch-empty">No results for "'+esc(q)+'"</div>';
+  res.innerHTML=html;
 }
 function clearFilters(){
   ['fCat','filterType','filterSubtype','filterBrand','fProdYear','fSt'].forEach(id=>{
@@ -1589,9 +1701,19 @@ function renderTripDetail(id){
   const gearItems=t.gear_ids.map(gid=>items.find(i=>i.gear_id===gid)).filter(Boolean);
   gearItems.sort((a,b)=>(a.subtype||'').localeCompare(b.subtype||'')||(a.name||'').localeCompare(b.name||''));
   const totalW=gearItems.reduce((s,i)=>s+(parseFloat(i.weight_g)||0),0);
+  const wt=parseFloat(t.weight_target)||0;
+  const wPct=wt?Math.min(totalW/wt*100,100):0;
+  const wColor=wPct>=100?'var(--danger)':wPct>=80?'var(--warn)':'var(--accent)';
+  const weightStat=wt
+    ?`<div class="trip-stat" style="min-width:140px">
+        <div class="trip-stat-val" style="color:${wColor}">${fmtWeight(totalW)}<span style="font-size:13px;font-weight:400;color:var(--muted)"> / ${fmtWeight(wt)}</span></div>
+        <div class="trip-stat-lbl">Weight / Budget</div>
+        <div class="weight-bar-wrap"><div class="weight-bar" style="width:${wPct.toFixed(1)}%;background:${wColor}"></div></div>
+      </div>`
+    :`<div class="trip-stat"><div class="trip-stat-val">${totalW?fmtWeight(totalW):'—'}</div><div class="trip-stat-lbl">Total Weight</div></div>`;
   let html=`<div class="trip-detail-stats">
     <div class="trip-stat"><div class="trip-stat-val">${gearItems.length}</div><div class="trip-stat-lbl">Items</div></div>
-    <div class="trip-stat"><div class="trip-stat-val">${totalW?fmtWeight(totalW):'—'}</div><div class="trip-stat-lbl">Total Weight</div></div>
+    ${weightStat}
     <div class="trip-stat"><div class="trip-stat-val" style="color:#444">${fmtTripDate(t.start_date)}</div><div class="trip-stat-lbl">Departs</div></div>
     <div class="trip-stat"><div class="trip-stat-val" style="color:#444">${fmtTripDate(t.end_date)}</div><div class="trip-stat-lbl">Returns</div></div>
   </div>`;
@@ -1682,6 +1804,7 @@ function openAddTrip(){
   document.getElementById('tripName').value='';
   document.getElementById('tripStartDate').value='';
   document.getElementById('tripEndDate').value='';
+  document.getElementById('tripWeightTarget').value='';
   document.getElementById('tripNotes').value='';
   document.getElementById('addTripOverlay').classList.add('open');
 }
@@ -1693,6 +1816,7 @@ function openEditTrip(id){
   document.getElementById('tripName').value=t.name;
   document.getElementById('tripStartDate').value=t.start_date;
   document.getElementById('tripEndDate').value=t.end_date;
+  document.getElementById('tripWeightTarget').value=t.weight_target||'';
   document.getElementById('tripNotes').value=t.notes||'';
   document.getElementById('addTripOverlay').classList.add('open');
 }
@@ -1704,6 +1828,7 @@ function duplicateTrip(id){
   document.getElementById('tripName').value='Copy of '+t.name;
   document.getElementById('tripStartDate').value='';
   document.getElementById('tripEndDate').value='';
+  document.getElementById('tripWeightTarget').value=t.weight_target||'';
   document.getElementById('tripNotes').value=t.notes||'';
   document.getElementById('addTripOverlay').classList.add('open');
 }
@@ -1725,16 +1850,17 @@ async function saveTrip(){
   const start=document.getElementById('tripStartDate').value;
   const end=document.getElementById('tripEndDate').value;
   const notes=document.getElementById('tripNotes').value.trim();
+  const weight_target=parseFloat(document.getElementById('tripWeightTarget').value)||null;
   if(start&&end&&end<start){toast('End date must be on or after start date');return;}
   const today=new Date().toISOString().slice(0,10);
   const status=!start||today<start?'planned':(!end||today<=end)?'in_progress':'ended';
   if(editingTripId){
     const t=trips.find(x=>x.trip_id===editingTripId);
     if(!t) return;
-    Object.assign(t,{name,start_date:start,end_date:end,status,notes,updated_at:new Date().toISOString()});
+    Object.assign(t,{name,start_date:start,end_date:end,status,notes,weight_target,updated_at:new Date().toISOString()});
     try{ await api('updateTrip',t); }catch(e){toast('API: '+e.message);}
   } else {
-    const t={trip_id:'TRIP-'+Date.now().toString(36).toUpperCase(),name,start_date:start,end_date:end,status,gear_ids:_dupGearIds?[..._dupGearIds]:[],notes,created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+    const t={trip_id:'TRIP-'+Date.now().toString(36).toUpperCase(),name,start_date:start,end_date:end,status,gear_ids:_dupGearIds?[..._dupGearIds]:[],notes,weight_target,created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
     _dupGearIds=null;
     trips.push(t);
     try{ await api('addTrip',t); }catch(e){toast('API: '+e.message);}
@@ -1748,13 +1874,19 @@ async function saveTrip(){
   toast(editingTripId?'Trip updated':'Trip created');
 }
 async function deleteTrip(id){
-  if(!confirm('Delete this trip?')) return;
+  const trip=trips.find(t=>t.trip_id===id); if(!trip) return;
   trips=trips.filter(t=>t.trip_id!==id);
-  try{ await api('deleteTrip',{trip_id:id}); }catch(e){toast('API: '+e.message);}
-  saveLocal();
-  updateBadges();
-  backToTrips();
-  toast('Trip deleted');
+  saveLocal(); updateBadges(); backToTrips();
+  toastWithUndo('Trip deleted',()=>{
+    trips.push(trip);
+    saveLocal(); updateBadges(); renderTrips();
+    toast('Delete undone');
+  });
+  setTimeout(async()=>{
+    if(!trips.find(t=>t.trip_id===id)){
+      try{ await api('deleteTrip',{trip_id:id}); }catch(e){toast('API: '+e.message);}
+    }
+  },5200);
 }
 async function endTrip(id){
   const t=trips.find(x=>x.trip_id===id);
@@ -1931,11 +2063,18 @@ function renderStatistics(){
     <div class="kpi-card kpi-amber"><div class="kpi-value">${fmtPrice(avgPrice)}</div><div class="kpi-label">Avg Item Price</div><div class="kpi-sub">per priced item</div></div>
     <div class="kpi-card kpi-purple"><div class="kpi-value">${mostExpensive?fmtPrice(parseFloat(mostExpensive.price||0)):'—'}</div><div class="kpi-label">Most Expensive</div><div class="kpi-sub">${mostExpensive?esc(mostExpensive.name).substring(0,22):'—'}</div></div>
     <div class="kpi-card kpi-red"><div class="kpi-value">${topCat?topCat[1]:0}</div><div class="kpi-label">Top Category</div><div class="kpi-sub">${topCat?topCat[0]:'—'}</div></div>`;
+  const withWeight=data.filter(i=>i.weight_g);
+  const totalWg=withWeight.reduce((s,i)=>s+(parseFloat(i.weight_g)||0),0);
+  const avgWg=withWeight.length?Math.round(totalWg/withWeight.length):0;
+  document.getElementById('statsKpi').innerHTML+=`
+    <div class="kpi-card" style="border-top:3px solid #6b9e7a"><div class="kpi-value" style="color:#3d7a2e">${totalWg?fmtWeight(totalWg):'—'}</div><div class="kpi-label">Total Kit Weight</div><div class="kpi-sub">${withWeight.length} items with weight</div></div>
+    <div class="kpi-card" style="border-top:3px solid #6b9e7a"><div class="kpi-value" style="color:#3d7a2e">${avgWg?fmtWeight(avgWg):'—'}</div><div class="kpi-label">Avg Item Weight</div><div class="kpi-sub">per item with weight</div></div>`;
   buildCountYearChart(data);
   buildCatChart(data);
   buildSpendYearChart(data);
   buildSpendCatChart(data);
   buildBreakdownTables(data);
+  buildWeightCharts(data);
 }
 
 function getYears(data){
@@ -2024,6 +2163,40 @@ function buildBreakdownTables(data){
   const brandRows=Object.entries(bm).map(([b,v])=>({label:b,count:v.count,value:Math.round(v.value)})).sort((a,b)=>b.count-a.count).slice(0,10);
   const maxB=Math.max(...brandRows.map(r=>r.count),1);
   document.getElementById('tableByBrand').innerHTML=`<table class="breakdown-table"><thead><tr><th>Brand</th><th>Items</th><th>Value</th><th style="width:120px">Share</th></tr></thead><tbody>${brandRows.map((r,i)=>`<tr><td>${esc(r.label)}</td><td><strong>${r.count}</strong></td><td>${r.value?'€'+r.value:'—'}</td><td><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${Math.round(r.count/maxB*100)}%;background:${PALETTE[i%PALETTE.length]}"></div></div></td></tr>`).join('')}</tbody></table>`;
+}
+
+function buildWeightCharts(data){
+  destroyChart('wc');
+  const withW=data.filter(i=>i.weight_g);
+  // Weight by category bar chart
+  const catWeights=CATS.map(cat=>{
+    const total=withW.filter(i=>i.category===cat).reduce((s,i)=>s+(parseFloat(i.weight_g)||0),0);
+    return{cat,total};
+  }).filter(r=>r.total>0);
+  if(catWeights.length){
+    _charts.wc=new Chart(document.getElementById('chartWeightCat').getContext('2d'),{
+      type:'bar',
+      data:{
+        labels:catWeights.map(r=>r.cat),
+        datasets:[{
+          data:catWeights.map(r=>Math.round(r.total)),
+          backgroundColor:catWeights.map(r=>getCatColor(r.cat).bg),
+          borderColor:catWeights.map(r=>getCatColor(r.cat).border),
+          borderWidth:1,borderRadius:4
+        }]
+      },
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:ctx=>` ${fmtWeight(ctx.raw)}`}}},
+        scales:{x:{grid:{display:false},ticks:{font:{size:11}}},
+          y:{beginAtZero:true,ticks:{font:{size:11},callback:v=>fmtWeight(v)},grid:{color:'rgba(0,0,0,.05)'}}}}
+    });
+  }
+  // Top 10 heaviest table
+  const heaviest=[...withW].sort((a,b)=>(parseFloat(b.weight_g)||0)-(parseFloat(a.weight_g)||0)).slice(0,10);
+  const maxW=parseFloat(heaviest[0]?.weight_g)||1;
+  document.getElementById('tableHeaviest').innerHTML=`<table class="breakdown-table"><thead><tr><th>Item</th><th>Weight</th><th style="width:120px">Bar</th></tr></thead><tbody>${
+    heaviest.map(i=>`<tr><td><strong>${esc(i.name)}</strong><small style="display:block;color:var(--muted);font-size:10px">${esc(i.brand||'')}${i.subtype?' · '+esc(i.subtype):''}</small></td><td><strong>${fmtWeight(parseFloat(i.weight_g))}</strong></td><td><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${Math.round(parseFloat(i.weight_g)/maxW*100)}%;background:${getCatColor(i.category).border}"></div></div></td></tr>`).join('')
+  }</tbody></table>`;
 }
 
 // ════ HIERARCHICAL SELECTS ════
@@ -2160,15 +2333,33 @@ function duplicateItem(id){
   toast('Duplicated — update serial / date as needed');
 }
 async function deleteItem(id){
-  if(!confirm('Delete this item permanently?')) return;
-  try{if(getApiUrl()) await api('deleteGear',{gear_id:id});}catch(e){toast('API: '+e.message);}
+  const item=items.find(i=>i.gear_id===id); if(!item) return;
+  const removedLends=lends.filter(l=>l.gear_id===id);
   items=items.filter(i=>i.gear_id!==id);
-  lends=lends.filter(l=>l.gear_id!==id); // clean up associated lend records
-  saveLocal(); closeModal('detailOverlay'); toast('Item deleted'); renderAll();
+  lends=lends.filter(l=>l.gear_id!==id);
+  saveLocal(); closeModal('detailOverlay'); renderAll();
+  toastWithUndo('Item deleted',()=>{
+    items.push(item);
+    lends.push(...removedLends);
+    saveLocal(); renderAll();
+    toast('Delete undone');
+  });
+  // Deferred API call — fires after undo window closes
+  setTimeout(async()=>{
+    if(!items.find(i=>i.gear_id===id)){
+      try{if(getApiUrl()) await api('deleteGear',{gear_id:id});}catch(e){toast('API: '+e.message);}
+    }
+  },5200);
+}
+function populateBorrowerList(){
+  const names=[...new Set(lends.map(l=>l.lent_to).filter(Boolean))].sort();
+  const dl=document.getElementById('borrowerList');
+  if(dl) dl.innerHTML=names.map(n=>`<option value="${esc(n)}">`).join('');
 }
 function quickLend(id){
   const item=items.find(i=>i.gear_id===id); if(!item) return;
   if(activeTrip(id)){toast('Item is currently in an active trip');return;}
+  populateBorrowerList();
   document.getElementById('lGearId').value=id;
   document.getElementById('lGearName').textContent=item.name+(item.brand?' — '+item.brand:'');
   document.getElementById('lendTitle').textContent='Lend: '+item.name;
@@ -2231,6 +2422,15 @@ async function confirmReturn(){
 function getServiceLog(item){
   if(!item.service_log) return [];
   try{return JSON.parse(item.service_log);}catch(e){return [];}
+}
+async function logInspectionNow(gearId){
+  const item=items.find(i=>i.gear_id===gearId); if(!item) return;
+  const log=getServiceLog(item);
+  log.unshift({date:new Date().toISOString().slice(0,10),type:'Inspection',note:'Inspected OK'});
+  item.service_log=JSON.stringify(log);
+  try{if(getApiUrl()) await api('updateGear',{gear_id:gearId,service_log:item.service_log});}catch(e){toast('API: '+e.message);}
+  saveLocal();
+  toast('Inspection logged for '+esc(item.name));
 }
 async function addServiceLogEntry(gearId){
   const item=items.find(i=>i.gear_id===gearId); if(!item) return;
@@ -2348,6 +2548,7 @@ function renderInspection(){
       <td><span class="age-dot ${dotColor}"></span>${ageLabel(yrs)}</td>
       <td>${statusBadge}</td>
       <td><div class="td-actions">
+        <button class="btn btn-ghost btn-sm icon-btn" onclick="logInspectionNow('${i.gear_id}')" title="Log Inspection Today">${IC.shield}</button>
         <button class="btn btn-ghost btn-sm icon-btn" onclick="openEdit('${i.gear_id}')" title="Edit">${IC.pencil}</button>
         <button class="btn btn-danger btn-sm icon-btn" onclick="deleteItem('${i.gear_id}')" title="Delete">${IC.x}</button>
       </div></td>
@@ -2674,7 +2875,31 @@ function removeType(cat,typ){
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 ['addOverlay','detailOverlay','returnOverlay','lendOverlay','addTripOverlay','tripItemPickerOverlay'].forEach(id=>{document.getElementById(id).addEventListener('click',e=>{if(e.target===e.currentTarget) closeModal(id);});});
 let toastTimer;
-function toast(msg,dur=2500){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),dur);}
+let _undoFn=null;
+function toast(msg,dur=2500){
+  const t=document.getElementById('toast');
+  document.getElementById('toastMsg').textContent=msg;
+  document.getElementById('toastUndo').style.display='none';
+  _undoFn=null;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),dur);
+}
+function toastWithUndo(msg,undoFn,dur=5000){
+  const t=document.getElementById('toast');
+  document.getElementById('toastMsg').textContent=msg;
+  const undoBtn=document.getElementById('toastUndo');
+  undoBtn.style.display='';
+  _undoFn=undoFn;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>{t.classList.remove('show');_undoFn=null;},dur);
+}
+function toastUndoClick(){
+  clearTimeout(toastTimer);
+  document.getElementById('toast').classList.remove('show');
+  if(_undoFn){_undoFn();_undoFn=null;}
+}
 async function loadAll(){document.getElementById('spin-all').style.display='';try{await connectAndLoad({force:true});}catch(e){}document.getElementById('spin-all').style.display='none';}
 function toggleSidebar(){const sb=document.getElementById('sidebar');const ov=document.getElementById('sidebarOverlay');const o=sb.classList.contains('open');if(o){sb.classList.remove('open');ov.classList.remove('open');}else{sb.classList.add('open');ov.classList.add('open');}}
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('open');}
@@ -2713,6 +2938,25 @@ document.getElementById('google-sign-in-btn').addEventListener('click', () => {
 });
 
 function signOut() { _auth.signOut(); }
+
+// ════ EXPORT ════
+function _download(filename,content,mime){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([content],{type:mime}));
+  a.download=filename; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+function exportJSON(){
+  const payload={exported_at:new Date().toISOString(),items,lends,trips,lookups};
+  _download('juodziai-gear-'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify(payload,null,2),'application/json');
+  toast('JSON export downloaded');
+}
+function exportCSV(){
+  const cols=['gear_id','name','brand','category','type','subtype','model','date_purchased','date_produced','price','weight_g','size_color','serial_cert','status','notes'];
+  const esc2=v=>`"${String(v??'').replace(/"/g,'""')}"`;
+  const rows=[cols.join(','),...items.map(i=>cols.map(c=>esc2(i[c])).join(','))];
+  _download('juodziai-gear-'+new Date().toISOString().slice(0,10)+'.csv',rows.join('\n'),'text/csv');
+  toast('CSV export downloaded');
+}
 
 // ════ INIT ════
 // Auth state listener above drives all loading
