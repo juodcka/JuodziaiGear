@@ -2729,6 +2729,7 @@ async function confirmReturn(){
 }
 
 async function returnAllForPerson(person,lendIds,gearIds){
+  toast(`DEBUG: called for ${person}, lendIds=${lendIds.length}, gearIds=${gearIds.length}`,5000);
   const today=new Date().toISOString().slice(0,10);
   for(let i=0;i<lendIds.length;i++){
     try{if(getApiUrl()) await api('returnGear',{lend_id:lendIds[i],gear_id:gearIds[i],date_returned:today,condition_on_return:''});}catch(e){toast('API error: '+e.message);return;}
