@@ -140,9 +140,11 @@ textarea.fc{resize:vertical;min-height:70px}
 .detail-name{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;margin-bottom:3px}
 .detail-brand{color:var(--muted);font-size:14px;margin-bottom:8px}
 .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
-.dfl{font-size:10px;color:#444;opacity:1;text-transform:uppercase;letter-spacing:.9px;margin-bottom:2px;font-weight:600}
+.dfl{font-size:10px;color:#444;opacity:1;text-transform:uppercase;letter-spacing:.9px;margin-bottom:0;font-weight:600}
 .dfv{font-size:13px}
-.detail-grid>div{background:#e8e7e1;border-radius:7px;padding:7px 10px}
+.detail-grid>div{border:1px solid #e8e7e1;border-radius:7px;overflow:hidden}
+.detail-grid>div .dfl{background:#e8e7e1;padding:4px 10px}
+.detail-grid>div .dfv{padding:6px 10px}
 .lent-box{background:var(--warn-light);border:1px solid rgba(224,123,0,.2);border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:13px;line-height:1.7}
 .lent-box-title{color:var(--warn);font-weight:700;font-size:11px;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
 .notes-box{background:var(--surface2);border-radius:8px;padding:12px 14px;font-size:13px;color:#555;margin-bottom:14px;line-height:1.6}
