@@ -156,6 +156,12 @@ textarea.fc{resize:vertical;min-height:70px}
 .settings-card h3{font-size:14px;font-weight:700;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
 .list-item{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px}
 .list-item:last-child{border-bottom:none}
+.toggle-switch{flex-shrink:0;cursor:pointer;display:inline-block}
+.toggle-switch input{display:none}
+.toggle-track{display:inline-flex;align-items:center;width:42px;height:24px;border-radius:12px;background:var(--border);transition:background .2s;padding:2px}
+.toggle-switch input:checked~.toggle-track{background:var(--accent)}
+.toggle-thumb{width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .2s}
+.toggle-switch input:checked~.toggle-track .toggle-thumb{transform:translateX(18px)}
 .add-row{display:flex;gap:8px;margin-top:12px}
 .add-row .fc{flex:1}
 .hier-tree{font-size:13px}
@@ -331,7 +337,6 @@ textarea.fc{resize:vertical;min-height:70px}
   .hdr-add-btn{display:none}
   .view-toggle{display:none}
   #user-name{display:none !important}
-  .hdr-signout-icon{display:inline}
   .form-grid{grid-template-columns:1fr}
   .stats{grid-template-columns:repeat(2,1fr)}
   .detail-grid{grid-template-columns:1fr}
@@ -348,36 +353,30 @@ textarea.fc{resize:vertical;min-height:70px}
   .trip-gear-gtable td:nth-child(1){width:32px}
   .trip-gear-gtable .td-photo img,.trip-gear-gtable .td-photo{width:28px;height:28px}
 
-  /* ── Sticky photo + name columns ── */
-  /* col 1: photo */
-  .gtable th:nth-child(1),.gtable td:nth-child(1),
-  .lent-table th:nth-child(1),.lent-table td:nth-child(1){
+  /* ── Sticky photo + name columns (active when body.sticky-cols) ── */
+  body.sticky-cols .gtable th:nth-child(1),body.sticky-cols .gtable td:nth-child(1),
+  body.sticky-cols .lent-table th:nth-child(1),body.sticky-cols .lent-table td:nth-child(1){
     position:sticky;left:0;z-index:2;
   }
-  .gtable th:nth-child(1),.lent-table th:nth-child(1){background:var(--surface2)}
-  .gtable td:nth-child(1),.lent-table td:nth-child(1){background:var(--surface)}
-  /* col 2: name — left = photo cell width (14px pad + 40px + 14px pad = 68px) */
-  .gtable th:nth-child(2),.gtable td:nth-child(2),
-  .lent-table th:nth-child(2),.lent-table td:nth-child(2){
+  body.sticky-cols .gtable th:nth-child(1),body.sticky-cols .lent-table th:nth-child(1){background:var(--surface2)}
+  body.sticky-cols .gtable td:nth-child(1),body.sticky-cols .lent-table td:nth-child(1){background:var(--surface)}
+  body.sticky-cols .gtable th:nth-child(2),body.sticky-cols .gtable td:nth-child(2),
+  body.sticky-cols .lent-table th:nth-child(2),body.sticky-cols .lent-table td:nth-child(2){
     position:sticky;left:68px;z-index:2;
     box-shadow:2px 0 5px -2px rgba(0,0,0,.12);
   }
-  .gtable th:nth-child(2),.lent-table th:nth-child(2){background:var(--surface2)}
-  .gtable td:nth-child(2),.lent-table td:nth-child(2){background:var(--surface)}
-  /* hover: keep sticky cells in sync */
-  .gtable tr:hover td:nth-child(1),.gtable tr:hover td:nth-child(2),
-  .lent-table tr:hover td:nth-child(1),.lent-table tr:hover td:nth-child(2){background:var(--surface2)}
-  /* lent-row tint */
-  .gtable tr.lent-row td:nth-child(1),.gtable tr.lent-row td:nth-child(2){background:#fdf6ea}
-  /* lent sub-row bg */
-  .lent-table tr.lent-sub-row td:nth-child(1),.lent-table tr.lent-sub-row td:nth-child(2){background:#fafaf7}
-  /* inspection coloured rows — must override !important to beat existing rules */
-  .gtable tr.insp-row-green td:nth-child(1),.gtable tr.insp-row-green td:nth-child(2){background:#f2faf0 !important}
-  .gtable tr.insp-row-amber td:nth-child(1),.gtable tr.insp-row-amber td:nth-child(2){background:#fdf6e8 !important}
-  .gtable tr.insp-row-red   td:nth-child(1),.gtable tr.insp-row-red   td:nth-child(2){background:#fdf0ec !important}
-  .gtable tr.insp-row-green:hover td:nth-child(1),.gtable tr.insp-row-green:hover td:nth-child(2){background:#e6f5e2 !important}
-  .gtable tr.insp-row-amber:hover td:nth-child(1),.gtable tr.insp-row-amber:hover td:nth-child(2){background:#faefd8 !important}
-  .gtable tr.insp-row-red:hover   td:nth-child(1),.gtable tr.insp-row-red:hover   td:nth-child(2){background:#f8e6e0 !important}
+  body.sticky-cols .gtable th:nth-child(2),body.sticky-cols .lent-table th:nth-child(2){background:var(--surface2)}
+  body.sticky-cols .gtable td:nth-child(2),body.sticky-cols .lent-table td:nth-child(2){background:var(--surface)}
+  body.sticky-cols .gtable tr:hover td:nth-child(1),body.sticky-cols .gtable tr:hover td:nth-child(2),
+  body.sticky-cols .lent-table tr:hover td:nth-child(1),body.sticky-cols .lent-table tr:hover td:nth-child(2){background:var(--surface2)}
+  body.sticky-cols .gtable tr.lent-row td:nth-child(1),body.sticky-cols .gtable tr.lent-row td:nth-child(2){background:#fdf6ea}
+  body.sticky-cols .lent-table tr.lent-sub-row td:nth-child(1),body.sticky-cols .lent-table tr.lent-sub-row td:nth-child(2){background:#fafaf7}
+  body.sticky-cols .gtable tr.insp-row-green td:nth-child(1),body.sticky-cols .gtable tr.insp-row-green td:nth-child(2){background:#f2faf0 !important}
+  body.sticky-cols .gtable tr.insp-row-amber td:nth-child(1),body.sticky-cols .gtable tr.insp-row-amber td:nth-child(2){background:#fdf6e8 !important}
+  body.sticky-cols .gtable tr.insp-row-red   td:nth-child(1),body.sticky-cols .gtable tr.insp-row-red   td:nth-child(2){background:#fdf0ec !important}
+  body.sticky-cols .gtable tr.insp-row-green:hover td:nth-child(1),body.sticky-cols .gtable tr.insp-row-green:hover td:nth-child(2){background:#e6f5e2 !important}
+  body.sticky-cols .gtable tr.insp-row-amber:hover td:nth-child(1),body.sticky-cols .gtable tr.insp-row-amber:hover td:nth-child(2){background:#faefd8 !important}
+  body.sticky-cols .gtable tr.insp-row-red:hover   td:nth-child(1),body.sticky-cols .gtable tr.insp-row-red:hover   td:nth-child(2){background:#f8e6e0 !important}
 
   /* ── Mobile font size bumps ── */
   body{font-size:15px}
@@ -457,10 +456,20 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
 .btn-google:hover{box-shadow:0 2px 8px rgba(0,0,0,.18)}
 .btn-google svg{flex-shrink:0}
 /* ── User info in header ── */
-.user-chip{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted)}
-.user-chip img{width:26px;height:26px;border-radius:50%;object-fit:cover}
-@media(min-width:721px){.hdr-signout-icon{display:none}}
-@media(max-width:720px){.hdr-signout-text{display:none}}
+.user-avatar-wrap{position:relative}
+.user-avatar-btn{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:2px solid var(--border);background:var(--surface2);cursor:pointer;overflow:hidden;padding:0;transition:border-color .15s}
+.user-avatar-btn:hover{border-color:var(--accent)}
+.user-avatar-btn img{width:34px;height:34px;object-fit:cover;display:block}
+.user-avatar-initials{font-size:13px;font-weight:700;color:var(--muted);line-height:1}
+.user-dropdown{position:absolute;top:calc(100% + 8px);right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 6px 24px rgba(0,0,0,.12);min-width:200px;z-index:500;display:none;overflow:hidden}
+.user-dropdown.open{display:block}
+.user-dropdown-header{padding:14px 16px 10px;border-bottom:1px solid var(--border)}
+.user-dropdown-name{font-weight:700;font-size:13px;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-dropdown-email{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-dropdown-action{display:flex;align-items:center;gap:9px;width:100%;padding:11px 16px;border:none;background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text);text-align:left;transition:background .12s}
+.user-dropdown-action:hover{background:var(--surface2)}
+.user-dropdown-action svg{color:var(--muted);flex-shrink:0}
+.conn-dot{width:8px;height:8px;border-radius:50%;background:#ccc;flex-shrink:0;position:absolute;bottom:0;right:0;border:1.5px solid var(--surface)}
 /* ── Trip detail action buttons ── */
 .trip-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 @media(max-width:720px){
@@ -508,17 +517,29 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
   </div>
   <div class="hdr-right">
     <button class="hdr-search" onclick="openGlobalSearch()" title="Search"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="8.5" cy="8.5" r="5.5"/><line x1="12.5" y1="12.5" x2="17" y2="17"/></svg></button>
+    <button class="hdr-search" id="hdrRefreshBtn" onclick="connectAndLoad({force:true})" title="Refresh data from Firebase"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 10A7 7 0 1 1 10 3h4"/><polyline points="14,1 14,5 10,5"/></svg></button>
     <div class="view-toggle">
       <button class="vbtn" id="vCard" title="Card view" onclick="setView('card')"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="7" height="7" rx="1"/><rect x="11" y="2" width="7" height="7" rx="1"/><rect x="2" y="11" width="7" height="7" rx="1"/><rect x="11" y="11" width="7" height="7" rx="1"/></svg></button>
       <button class="vbtn active" id="vTable" title="Table view" onclick="setView('table')"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><line x1="3" y1="5" x2="17" y2="5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="15" x2="17" y2="15"/></svg></button>
     </div>
     <button class="btn btn-primary hdr-add-btn" onclick="openAddModal()">+ Add Gear</button>
-    <div class="user-chip">
-      <div class="conn-dot" id="connDot"></div>
-      <img id="user-photo" src="" alt="" style="display:none">
-      <span id="user-name"></span>
+    <div class="user-avatar-wrap" id="userAvatarWrap">
+      <button class="user-avatar-btn" id="userAvatarBtn" onclick="toggleUserDropdown()" title="Account">
+        <img id="user-photo" src="" alt="" style="display:none">
+        <span class="user-avatar-initials" id="user-initials">?</span>
+        <div class="conn-dot" id="connDot"></div>
+      </button>
+      <div class="user-dropdown" id="userDropdown">
+        <div class="user-dropdown-header">
+          <div class="user-dropdown-name" id="user-name"></div>
+          <div class="user-dropdown-email" id="user-email"></div>
+        </div>
+        <button class="user-dropdown-action" onclick="signOut()">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h4"/><polyline points="13,14 17,10 13,6"/><line x1="17" y1="10" x2="7" y2="10"/></svg>
+          Sign out
+        </button>
+      </div>
     </div>
-    <button class="btn btn-ghost btn-sm" onclick="signOut()" title="Sign out"><span class="hdr-signout-text">Sign out</span><span class="hdr-signout-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h4"/><polyline points="13,14 17,10 13,6"/><line x1="17" y1="10" x2="7" y2="10"/></svg></span></button>
   </div>
 </header>
 
@@ -770,33 +791,38 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
     <div id="sec-settings" class="sec-hidden">
       <div class="page-header"><div class="page-title">Settings <small>Manage brands, categories, types</small></div></div>
       <div class="settings-card" style="margin-bottom:20px">
-        <h3><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="10" cy="5" rx="7" ry="2.5"/><path d="M3 5v4c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V5"/><path d="M3 9v4c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V9"/></svg> Firebase Firestore</h3>
+        <h3><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="10" cy="5" rx="7" ry="2.5"/><path d="M3 5v4c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V5"/><path d="M3 9v4c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V9"/></svg> App Database</h3>
         <div style="font-size:13px;color:var(--muted);margin-bottom:10px">Project: <strong>juodziaigear</strong></div>
         <button class="btn btn-ghost btn-sm" onclick="connectAndLoad({force:true})"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 10A7 7 0 1 1 10 3h4"/><polyline points="14,1 14,5 10,5"/></svg> Reload data from Firebase</button>
       </div>
-      <div class="settings-grid">
-        <div class="settings-card">
-          <h3><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5a1 1 0 0 1 1-1h4l2 2h6a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5z"/></svg> Categories</h3>
-          <div id="categoryList" style="max-height:200px;overflow-y:auto"></div>
-          <div class="add-row">
-            <input type="text" class="fc" id="newCategory" placeholder="Add category&hellip;" onkeydown="if(event.key==='Enter') addCategory()">
-            <button class="btn btn-primary btn-sm" onclick="addCategory()">Add</button>
-          </div>
+      <div class="settings-card" style="margin-bottom:20px">
+        <h3><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v10m0 0l-3-3m3 3l3-3"/><path d="M4 15h12"/></svg> Export Data</h3>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:14px">Download a local backup of all your gear, trips, and lend records.</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="exportJSON()"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v10m0 0l-3-3m3 3l3-3"/><path d="M4 15h12"/></svg> Download JSON (full backup)</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportCSV()"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v10m0 0l-3-3m3 3l3-3"/><path d="M4 15h12"/></svg> Download CSV (gear list)</button>
         </div>
+      </div>
+      <div class="settings-card" style="margin-bottom:20px">
+        <h3><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="7" height="7" rx="1"/><rect x="11" y="2" width="7" height="7" rx="1"/><rect x="2" y="11" width="7" height="7" rx="1"/><rect x="11" y="11" width="7" height="7" rx="1"/></svg> Display Preferences</h3>
+        <div class="list-item">
+          <div>
+            <div style="font-weight:600;font-size:13px">Freeze photo &amp; name columns on mobile</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">Keep the first two columns visible while scrolling tables sideways</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="stickyColsToggle" onchange="setStickyColumns(this.checked)">
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          </label>
+        </div>
+      </div>
+      <div class="settings-grid">
         <div class="settings-card">
           <h3><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h6l8 8-6 6-8-8V3z"/><circle cx="7" cy="7" r="1" fill="currentColor"/></svg> Brands</h3>
           <div id="brandList" style="max-height:300px;overflow-y:auto"></div>
           <div class="add-row">
             <input type="text" class="fc" id="newBrand" placeholder="Add brand&hellip;" onkeydown="if(event.key==='Enter') addBrand()">
             <button class="btn btn-primary btn-sm" onclick="addBrand()">Add</button>
-          </div>
-        </div>
-        <div class="settings-card" style="grid-column:1/-1">
-          <h3><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v10m0 0l-3-3m3 3l3-3"/><path d="M4 15h12"/></svg> Export Data</h3>
-          <div style="font-size:13px;color:var(--muted);margin-bottom:14px">Download a local backup of all your gear, trips, and lend records.</div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <button class="btn btn-ghost btn-sm" onclick="exportJSON()"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v10m0 0l-3-3m3 3l3-3"/><path d="M4 15h12"/></svg> Download JSON (full backup)</button>
-            <button class="btn btn-ghost btn-sm" onclick="exportCSV()"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3v10m0 0l-3-3m3 3l3-3"/><path d="M4 15h12"/></svg> Download CSV (gear list)</button>
           </div>
         </div>
         <div class="settings-card" style="grid-column:1/-1">
@@ -1207,6 +1233,7 @@ function normalizeTrip(t){
 async function connectAndLoad({force=false}={}){
   // Serve from cache immediately so UI is instant
   loadLocal();
+  initStickyColumns();
   updateBadges(); renderAll(); renderLookupUI();
 
   // Skip Firebase if cache is fresh and not forced
@@ -1237,6 +1264,9 @@ function setConnStatus(state,msg){
   const dot=document.getElementById('connDot');
   dot.className='conn-dot '+(state==='connected'?'connected':state==='loading'?'loading':'error');
   dot.title=msg;
+  const btn=document.getElementById('hdrRefreshBtn');
+  if(btn) btn.style.opacity=state==='loading'?'0.5':'1';
+  if(btn) btn.querySelector('svg').style.animation=state==='loading'?'spin 1s linear infinite':'';
 }
 
 // ════ VIEW/SORT/SECTION ════
@@ -1285,7 +1315,7 @@ function showSec(name){
   document.querySelectorAll('.sidebar-item').forEach((el,i)=>el.classList.toggle('active',SECTIONS[i]===name));
   document.querySelectorAll('.mnav-item').forEach(el=>el.classList.toggle('active',el.dataset.sec===name));
   if(window.innerWidth<=900) closeSidebar();
-  if(name==='settings') renderLookupUI();
+  if(name==='settings'){renderLookupUI();const cb=document.getElementById('stickyColsToggle');if(cb) cb.checked=document.body.classList.contains('sticky-cols');}
   else if(name==='statistics') renderStatistics();
   else if(name==='inspection') renderInspection();
   else if(name==='trips'){ updateTripStatuses(); renderTrips(); }
@@ -2949,6 +2979,19 @@ function renderHierTree(){
     </div>`;
   }).join('');
 }
+function setStickyColumns(on){
+  document.body.classList.toggle('sticky-cols',on);
+  localStorage.setItem('sg_sticky_cols',on?'1':'0');
+  const cb=document.getElementById('stickyColsToggle');
+  if(cb) cb.checked=on;
+}
+function initStickyColumns(){
+  const saved=localStorage.getItem('sg_sticky_cols');
+  // default ON (null = first visit)
+  const on=saved===null?true:saved==='1';
+  setStickyColumns(on);
+}
+
 function renderLookupUI(){
   const cats=getCats();
   const cl=document.getElementById('categoryList');
@@ -3056,9 +3099,21 @@ _auth.onAuthStateChanged(user => {
     loginScreen.style.display = 'none';
     shell.style.display = '';
     const nameEl = document.getElementById('user-name');
+    const emailEl = document.getElementById('user-email');
+    const initialsEl = document.getElementById('user-initials');
     const photoEl = document.getElementById('user-photo');
     if (nameEl) nameEl.textContent = user.displayName || user.email;
-    if (photoEl && user.photoURL) { photoEl.src = user.photoURL; photoEl.style.display = ''; }
+    if (emailEl) emailEl.textContent = user.displayName ? user.email : '';
+    if (initialsEl) {
+      const name = user.displayName || user.email || '?';
+      initialsEl.textContent = name.split(/[\s@]/).filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join('');
+    }
+    if (photoEl && user.photoURL) {
+      photoEl.src = user.photoURL;
+      photoEl.style.display = 'block';
+      const init = document.getElementById('user-initials');
+      if (init) init.style.display = 'none';
+    }
     loadLocal(); renderAll(); renderLookupUI();
     connectAndLoad();
   } else {
@@ -3078,6 +3133,18 @@ document.getElementById('google-sign-in-btn').addEventListener('click', () => {
 });
 
 function signOut() { _auth.signOut(); }
+function toggleUserDropdown(){
+  const dd=document.getElementById('userDropdown');
+  dd.classList.toggle('open');
+}
+// Close dropdown when clicking outside
+document.addEventListener('click',function(e){
+  const wrap=document.getElementById('userAvatarWrap');
+  if(wrap && !wrap.contains(e.target)){
+    const dd=document.getElementById('userDropdown');
+    if(dd) dd.classList.remove('open');
+  }
+});
 
 // ════ EXPORT ════
 function _download(filename,content,mime){
