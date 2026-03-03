@@ -348,6 +348,37 @@ textarea.fc{resize:vertical;min-height:70px}
   .trip-gear-gtable td:nth-child(1){width:32px}
   .trip-gear-gtable .td-photo img,.trip-gear-gtable .td-photo{width:28px;height:28px}
 
+  /* ── Sticky photo + name columns ── */
+  /* col 1: photo */
+  .gtable th:nth-child(1),.gtable td:nth-child(1),
+  .lent-table th:nth-child(1),.lent-table td:nth-child(1){
+    position:sticky;left:0;z-index:2;
+  }
+  .gtable th:nth-child(1),.lent-table th:nth-child(1){background:var(--surface2)}
+  .gtable td:nth-child(1),.lent-table td:nth-child(1){background:var(--surface)}
+  /* col 2: name — left = photo cell width (14px pad + 40px + 14px pad = 68px) */
+  .gtable th:nth-child(2),.gtable td:nth-child(2),
+  .lent-table th:nth-child(2),.lent-table td:nth-child(2){
+    position:sticky;left:68px;z-index:2;
+    box-shadow:2px 0 5px -2px rgba(0,0,0,.12);
+  }
+  .gtable th:nth-child(2),.lent-table th:nth-child(2){background:var(--surface2)}
+  .gtable td:nth-child(2),.lent-table td:nth-child(2){background:var(--surface)}
+  /* hover: keep sticky cells in sync */
+  .gtable tr:hover td:nth-child(1),.gtable tr:hover td:nth-child(2),
+  .lent-table tr:hover td:nth-child(1),.lent-table tr:hover td:nth-child(2){background:var(--surface2)}
+  /* lent-row tint */
+  .gtable tr.lent-row td:nth-child(1),.gtable tr.lent-row td:nth-child(2){background:#fdf6ea}
+  /* lent sub-row bg */
+  .lent-table tr.lent-sub-row td:nth-child(1),.lent-table tr.lent-sub-row td:nth-child(2){background:#fafaf7}
+  /* inspection coloured rows — must override !important to beat existing rules */
+  .gtable tr.insp-row-green td:nth-child(1),.gtable tr.insp-row-green td:nth-child(2){background:#f2faf0 !important}
+  .gtable tr.insp-row-amber td:nth-child(1),.gtable tr.insp-row-amber td:nth-child(2){background:#fdf6e8 !important}
+  .gtable tr.insp-row-red   td:nth-child(1),.gtable tr.insp-row-red   td:nth-child(2){background:#fdf0ec !important}
+  .gtable tr.insp-row-green:hover td:nth-child(1),.gtable tr.insp-row-green:hover td:nth-child(2){background:#e6f5e2 !important}
+  .gtable tr.insp-row-amber:hover td:nth-child(1),.gtable tr.insp-row-amber:hover td:nth-child(2){background:#faefd8 !important}
+  .gtable tr.insp-row-red:hover   td:nth-child(1),.gtable tr.insp-row-red:hover   td:nth-child(2){background:#f8e6e0 !important}
+
   /* ── Mobile font size bumps ── */
   body{font-size:15px}
   .tag{font-size:11px}
