@@ -2711,7 +2711,12 @@ function getCustomFields(){
 
 // ════ RETURN ════
 function openReturn(gear_id){
-  const lend=currentLend(gear_id); if(!lend) return;
+  const lend=currentLend(gear_id);
+  if(!lend){
+    const all=lends.filter(l=>l.gear_id===gear_id);
+    toast('Lend record not found. Records for this item: '+all.length+' (returned: '+all.filter(l=>l.date_returned).length+'). Try refreshing data.',5000);
+    return;
+  }
   document.getElementById('rLendId').value=lend.lend_id;document.getElementById('rGearId').value=gear_id;
   document.getElementById('rDate').value=new Date().toISOString().slice(0,10);document.getElementById('rCondition').value='';
   closeModal('detailOverlay'); document.getElementById('returnOverlay').classList.add('open');
