@@ -2667,11 +2667,24 @@ async function confirmNewLending(){
 }
 
 // ════ CUSTOM FIELDS ON GEAR ITEMS ════
+function getCfLabelOptions(){
+  const labels=new Set();
+  items.forEach(it=>(it.custom_fields||[]).forEach(f=>{if(f.label) labels.add(f.label);}));
+  return [...labels].sort();
+}
 function addCustomField(label='',value=''){
+  const listId='cfLabelList';
+  if(!document.getElementById(listId)){
+    const dl=document.createElement('datalist');
+    dl.id=listId;
+    document.body.appendChild(dl);
+  }
+  const dl=document.getElementById(listId);
+  dl.innerHTML=getCfLabelOptions().map(l=>`<option value="${esc(l)}">`).join('');
   const row=document.createElement('div');
   row.className='cf-row';
   row.style.cssText='display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:center;margin-bottom:6px';
-  row.innerHTML=`<input type="text" class="fc cf-label" placeholder="Label (e.g. Size)" value="${esc(label)}" style="font-size:13px">
+  row.innerHTML=`<input type="text" class="fc cf-label" list="${listId}" placeholder="Label (e.g. Size)" value="${esc(label)}" style="font-size:13px">
     <input type="text" class="fc cf-value" placeholder="Value (e.g. 44)" value="${esc(value)}" style="font-size:13px">
     <button type="button" onclick="this.closest('.cf-row').remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:0 4px">×</button>`;
   document.getElementById('fCustomFields').appendChild(row);
