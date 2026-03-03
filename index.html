@@ -1709,7 +1709,8 @@ function renderLent(){
       const gid='lg-'+idx++;
       const lendIds=entries.map(e=>e.lend.lend_id).filter(Boolean);
       const gearIds=entries.map(e=>e.item.gear_id);
-      rows+=`<tr class="lent-group-header" id="${gid}" onclick="toggleLentGroup('${gid}',event)"><td colspan="6"><div class="lent-group-header-inner"><span class="group-toggle">${IC.chevR}</span>${esc(person)}<span class="group-count">${entries.length}</span><span class="lent-grp-meta">Lent: ${esc(minDateLent)}</span><span class="lent-grp-meta">Return by: ${esc(maxDateDue)}</span><button class="btn btn-warn btn-sm" style="margin-left:auto;flex-shrink:0" onclick="returnAllForPerson(${JSON.stringify(person)},${JSON.stringify(lendIds)},${JSON.stringify(gearIds)})">${IC.ret} Return All</button></div></td></tr>`;
+      const raData=JSON.stringify({person,lendIds,gearIds}).replace(/'/g,"&#39;");
+      rows+=`<tr class="lent-group-header" id="${gid}" onclick="toggleLentGroup('${gid}',event)"><td colspan="6"><div class="lent-group-header-inner"><span class="group-toggle">${IC.chevR}</span>${esc(person)}<span class="group-count">${entries.length}</span><span class="lent-grp-meta">Lent: ${esc(minDateLent)}</span><span class="lent-grp-meta">Return by: ${esc(maxDateDue)}</span><button class="btn btn-warn btn-sm" style="margin-left:auto;flex-shrink:0" data-ra='${raData}' onclick="const d=JSON.parse(this.dataset.ra);returnAllForPerson(d.person,d.lendIds,d.gearIds)">${IC.ret} Return All</button></div></td></tr>`;
       entries.forEach(({item:i,lend})=>{
         const overdue=lend.date_due&&lend.date_due<today;
         rows+=`<tr class="lent-sub-row hidden">
@@ -2729,7 +2730,6 @@ async function confirmReturn(){
 }
 
 async function returnAllForPerson(person,lendIds,gearIds){
-  toast(`DEBUG: called for ${person}, lendIds=${lendIds.length}, gearIds=${gearIds.length}`,5000);
   const today=new Date().toISOString().slice(0,10);
   for(let i=0;i<lendIds.length;i++){
     try{if(getApiUrl()) await api('returnGear',{lend_id:lendIds[i],gear_id:gearIds[i],date_returned:today,condition_on_return:''});}catch(e){toast('API error: '+e.message);return;}
