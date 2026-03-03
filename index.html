@@ -868,7 +868,7 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
       <div class="fg"><label class="fl">Date of Production</label><input type="date" class="fc" id="fDateProd"></div>
       <div class="fg"><label class="fl">Price Paid</label><input type="number" class="fc" id="fPrice" placeholder="0.00" min="0" step="0.01"></div>
       <div class="fg"><label class="fl">Weight (g)</label><input type="number" class="fc" id="fWeight" placeholder="e.g. 450"></div>
-      <div class="fg"><label class="fl">Color / Size</label><input type="text" class="fc" id="fSize" placeholder="e.g. Red / L"></div>
+
       <div class="fg"><label class="fl">Serial / Cert. No.</label><input type="text" class="fc" id="fSerial" placeholder="e.g. CE EN12492"></div>
       <div class="fg"><label class="fl">Status</label><select class="fc" id="fStatus" onchange="toggleLentFields()"><option value="active">Active</option><option value="lent">Lent Out</option><option value="retired">Retired</option></select></div>
       <div class="fg" id="retireReasonGroup" style="display:none"><label class="fl">Retirement Reason</label><select class="fc" id="fRetireReason"><option value="worn_out">Worn out</option><option value="damaged">Damaged</option><option value="upgraded">Upgraded / replaced</option><option value="sold">Sold</option><option value="other">Other</option></select></div>
@@ -2410,7 +2410,7 @@ function toggleLentFields(){
 }
 function clearForm(){
   populateCategoryDropdowns();
-  ['fName','fModel','fSerial','fSize','fNotes','fLentTo','fPhotoUrl'].forEach(id=>document.getElementById(id).value='');
+  ['fName','fModel','fSerial','fNotes','fLentTo','fPhotoUrl'].forEach(id=>document.getElementById(id).value='');
   ['fDateBought','fDateProd','fPrice','fWeight','fLentDate','fLentReturn'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fStatus').value='active'; document.getElementById('lentFields').style.display='none';
   const _rg=document.getElementById('retireReasonGroup'); if(_rg) _rg.style.display='none';
@@ -2426,7 +2426,7 @@ function openEdit(id){
   document.getElementById('fName').value=item.name||'';document.getElementById('fModel').value=item.model||'';
   document.getElementById('fDateBought').value=item.date_purchased||'';document.getElementById('fDateProd').value=item.date_produced||'';
   document.getElementById('fPrice').value=item.price||'';document.getElementById('fWeight').value=item.weight_g||'';
-  document.getElementById('fSize').value=item.size_color||'';document.getElementById('fSerial').value=item.serial_cert||'';
+  document.getElementById('fSerial').value=item.serial_cert||'';
   document.getElementById('fStatus').value=item.status||'active';
   let _editNotes=item.notes||'';
   if(item.status==='retired'){
@@ -2457,7 +2457,7 @@ async function saveItem(){
     subtype:document.getElementById('fSubtype').value,model:document.getElementById('fModel').value.trim(),
     date_purchased:document.getElementById('fDateBought').value,date_produced:document.getElementById('fDateProd').value,
     price:document.getElementById('fPrice').value,weight_g:document.getElementById('fWeight').value,
-    size_color:document.getElementById('fSize').value.trim(),serial_cert:document.getElementById('fSerial').value.trim(),
+    serial_cert:document.getElementById('fSerial').value.trim(),
     photo_url:document.getElementById('fPhotoUrl').value.trim(),
     custom_fields:getCustomFields()};
   let _saveNotes=document.getElementById('fNotes').value.trim();
@@ -2496,8 +2496,7 @@ function duplicateItem(id){
   document.getElementById('fDateProd').value=src.date_produced||'';
   document.getElementById('fPrice').value=src.price||'';
   document.getElementById('fWeight').value=src.weight_g||'';
-  document.getElementById('fSize').value=src.size_color||'';
-  document.getElementById('fSerial').value=''; // clear — unique per item
+    document.getElementById('fSerial').value=''; // clear — unique per item
   document.getElementById('fStatus').value='active';
   document.getElementById('fNotes').value=src.notes||'';
   document.getElementById('fPhotoUrl').value=src.photo_url||'';
@@ -2788,7 +2787,7 @@ function openDetail(id){
   const lend=currentLend(id);
   const lentBox=lend?`<div class="lent-box"><div class="lent-box-title">Currently Lent Out</div><div>To: <strong>${esc(lend.lent_to||'Unknown')}</strong></div>${lend.date_lent?`<div>Since: ${esc(lend.date_lent)}</div>`:''} ${lend.date_due?`<div>Due back: <strong>${esc(lend.date_due)}</strong></div>`:''}</div>`:'';
   const cfEntries=(item.custom_fields||[]).filter(f=>f.label||f.value).map(f=>[f.label||'—',f.value||'—']);
-  const fields=[['Brand',item.brand],['Category',item.category],['Type',item.type],['Subtype',item.subtype],['Model',item.model],['Purchased',item.date_purchased],['Price',item.price?'€'+item.price:''],['Weight',item.weight_g?item.weight_g+'g':''],['Size/Color',item.size_color],['Serial/Cert',item.serial_cert],['Status',item.status],...cfEntries].filter(f=>f[1]);
+  const fields=[['Brand',item.brand],['Category',item.category],['Type',item.type],['Subtype',item.subtype],['Model',item.model],['Purchased',item.date_purchased],['Price',item.price?'€'+item.price:''],['Weight',item.weight_g?item.weight_g+'g':''],['Serial/Cert',item.serial_cert],['Status',item.status],...cfEntries].filter(f=>f[1]);
   const retireMatch=(item.notes||'').match(/^\[Retired:\s*([^\]]+)\]/);
   const retireTag=item.status==='retired'?`<span class="tag tag-retired">Retired${retireMatch?' · '+retireMatch[1]:''}</span>`:'';
   const log=getServiceLog(item);
@@ -3343,7 +3342,7 @@ function exportJSON(){
   toast('JSON export downloaded');
 }
 function exportCSV(){
-  const cols=['gear_id','name','brand','category','type','subtype','model','date_purchased','date_produced','price','weight_g','size_color','serial_cert','status','notes','custom_fields'];
+  const cols=['gear_id','name','brand','category','type','subtype','model','date_purchased','date_produced','price','weight_g','serial_cert','status','notes','custom_fields'];
   const esc2=v=>`"${String(v??'').replace(/"/g,'""')}"`;
   const rows=[cols.join(','),...items.map(i=>cols.map(c=>esc2(i[c])).join(','))];
   _download('juodziai-gear-'+new Date().toISOString().slice(0,10)+'.csv',rows.join('\n'),'text/csv');
