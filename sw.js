@@ -1,11 +1,15 @@
 // JuodziaiGear Service Worker
 // IMPORTANT: Bump CACHE version on every deploy (jg-v1 → jg-v2, etc.)
-const CACHE = 'jg-v1';
+const CACHE = 'jg-v2';
+
+// Use self.location to build paths relative to the SW's own location.
+// This works correctly on both custom domains and GitHub Pages subdirectories.
+const BASE = self.location.pathname.replace(/\/sw\.js$/, '/');
 
 const SHELL = [
-  '/',
-  '/index.html',
-  '/manifest.json',
+  BASE,
+  BASE + 'index.html',
+  BASE + 'manifest.json',
   'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js',
   'https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js',

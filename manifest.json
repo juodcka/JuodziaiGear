@@ -2,7 +2,7 @@
   "name": "JuodziaiGear — Inventory",
   "short_name": "JuodziaiGear",
   "description": "Outdoor gear inventory, trips, and lending tracker",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#ebeae5",
   "theme_color": "#ebeae5",
