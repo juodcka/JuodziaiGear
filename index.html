@@ -32,7 +32,7 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 .logo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:3px;color:#1c2218}
 .logo span{color:#b86b00}
 .hdr-right{display:flex;gap:8px;align-items:center}
-.btn{padding:7px 16px;border-radius:7px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;transition:all .14s;white-space:nowrap}
+.btn{padding:7px 16px;border-radius:7px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;transition:all .14s;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
 .btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:#2e6636}
 .btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border)}.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
 .btn-danger{background:transparent;color:var(--danger);border:1px solid var(--danger)}.btn-danger:hover{background:var(--danger-light)}
@@ -142,9 +142,9 @@ textarea.fc{resize:vertical;min-height:70px}
 .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
 .dfl{font-size:10px;color:#444;opacity:1;text-transform:uppercase;letter-spacing:.9px;margin-bottom:0;font-weight:600}
 .dfv{font-size:13px}
-.detail-grid>div{border:1px solid #e8e7e1;border-radius:7px;overflow:hidden}
-.detail-grid>div .dfl{background:#e8e7e1;padding:4px 10px}
-.detail-grid>div .dfv{padding:6px 10px}
+.detail-grid>div{border:1px solid #e0dfd9;border-radius:7px;overflow:hidden;background:var(--surface)}
+.detail-grid>div .dfl{background:#e8e7e1;padding:4px 10px;display:block}
+.detail-grid>div .dfv{padding:6px 10px;display:block;background:var(--surface)}
 .lent-box{background:var(--warn-light);border:1px solid rgba(224,123,0,.2);border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:13px;line-height:1.7}
 .lent-box-title{color:var(--warn);font-weight:700;font-size:11px;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
 .notes-box{background:var(--surface2);border-radius:8px;padding:12px 14px;font-size:13px;color:#555;margin-bottom:14px;line-height:1.6}
@@ -154,7 +154,8 @@ textarea.fc{resize:vertical;min-height:70px}
 .lent-table td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:13px}
 .lent-table tr:last-child td{border-bottom:none}
 .lent-table tr:hover td{background:var(--surface2)}
-.lent-table tr.lent-group-header td{background:var(--surface2);padding:8px 14px;font-size:12px;font-weight:700;letter-spacing:.5px;border-top:2px solid var(--border);color:var(--text);cursor:pointer;display:flex;align-items:center;gap:4px}
+.lent-table tr.lent-group-header td{background:var(--surface2);padding:0;font-size:12px;font-weight:700;letter-spacing:.5px;border-top:2px solid var(--border);color:var(--text);cursor:pointer}
+.lent-group-header-inner{display:flex;align-items:center;gap:4px;padding:8px 14px;width:100%;box-sizing:border-box}
 .lent-table tr.lent-group-header:hover td{background:var(--accent-light)}
 .lent-table tr.lent-group-header .group-toggle{margin-right:6px}
 .lent-grp-meta{font-size:11px;color:var(--muted);font-weight:400;margin-left:12px}
@@ -1707,7 +1708,7 @@ function renderLent(){
       const gid='lg-'+idx++;
       const lendIds=entries.map(e=>e.lend.lend_id).filter(Boolean);
       const gearIds=entries.map(e=>e.item.gear_id);
-      rows+=`<tr class="lent-group-header" id="${gid}" onclick="toggleLentGroup('${gid}')"><td colspan="6"><span class="group-toggle">${IC.chevR}</span>${esc(person)}<span class="group-count">${entries.length}</span><span class="lent-grp-meta">Lent: ${esc(minDateLent)}</span><span class="lent-grp-meta">Return by: ${esc(maxDateDue)}</span><button class="btn btn-warn btn-sm" style="margin-left:auto;padding:2px 10px;font-size:12px" onclick="event.stopPropagation();returnAllForPerson(${JSON.stringify(person)},${JSON.stringify(lendIds)},${JSON.stringify(gearIds)})">${IC.ret} Return All</button></td></tr>`;
+      rows+=`<tr class="lent-group-header" id="${gid}" onclick="toggleLentGroup('${gid}')"><td colspan="6"><div class="lent-group-header-inner"><span class="group-toggle">${IC.chevR}</span>${esc(person)}<span class="group-count">${entries.length}</span><span class="lent-grp-meta">Lent: ${esc(minDateLent)}</span><span class="lent-grp-meta">Return by: ${esc(maxDateDue)}</span><button class="btn btn-warn btn-sm" style="margin-left:auto" onclick="event.stopPropagation();returnAllForPerson(${JSON.stringify(person)},${JSON.stringify(lendIds)},${JSON.stringify(gearIds)})">${IC.ret} Return All</button></div></td></tr>`;
       entries.forEach(({item:i,lend})=>{
         const overdue=lend.date_due&&lend.date_due<today;
         rows+=`<tr class="lent-sub-row hidden">
