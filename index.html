@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>JuodžiaiGear — Inventory</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ebeae5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="JuodziaiGear">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-RC4XFN2DCQ"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-RC4XFN2DCQ');</script>
@@ -3093,6 +3100,9 @@ function closeSidebar(){document.getElementById('sidebar').classList.remove('ope
 // Client only checks whether a user is signed in at all.
 const _auth = firebase.auth();
 
+// Complete pending redirect sign-in (iOS PWA standalone mode)
+_auth.getRedirectResult().catch(() => {});
+
 _auth.onAuthStateChanged(user => {
   const shell = document.getElementById('app-shell');
   const loginScreen = document.getElementById('login-screen');
@@ -3127,10 +3137,15 @@ document.getElementById('google-sign-in-btn').addEventListener('click', () => {
   const errEl = document.getElementById('login-error');
   errEl.style.display = 'none';
   const provider = new firebase.auth.GoogleAuthProvider();
-  _auth.signInWithPopup(provider).catch(err => {
-    errEl.textContent = err.message;
-    errEl.style.display = '';
-  });
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  if (isStandalone) {
+    _auth.signInWithRedirect(provider);
+  } else {
+    _auth.signInWithPopup(provider).catch(err => {
+      errEl.textContent = err.message;
+      errEl.style.display = '';
+    });
+  }
 });
 
 function signOut() { _auth.signOut(); }
@@ -3182,5 +3197,12 @@ function exportCSV(){
   </div>
 </nav>
 </div><!-- /app-shell -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js');
+  });
+}
+</script>
 </body>
 </html>
