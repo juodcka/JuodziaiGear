@@ -2733,8 +2733,15 @@ async function confirmReturn(){
   saveLocal();closeModal('returnOverlay');toast('Gear marked as returned');renderAll();
 }
 
+let _returnAllArmed=null;
 async function returnAllForPerson(person,lendIds,gearIds){
-  if(!confirm(`Mark all ${gearIds.length} item${gearIds.length>1?'s':''} from ${person} as returned?`)) return;
+  if(_returnAllArmed!==person){
+    _returnAllArmed=person;
+    setTimeout(()=>{_returnAllArmed=null;},4000);
+    toast(`Tap "Return All" again to confirm returning ${gearIds.length} item${gearIds.length>1?'s':''} from ${person}`,4000);
+    return;
+  }
+  _returnAllArmed=null;
   const today=new Date().toISOString().slice(0,10);
   for(let i=0;i<lendIds.length;i++){
     try{if(getApiUrl()) await api('returnGear',{lend_id:lendIds[i],gear_id:gearIds[i],date_returned:today,condition_on_return:''});}catch(e){toast('API error: '+e.message);break;}
