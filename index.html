@@ -223,6 +223,12 @@ textarea.fc{resize:vertical;min-height:70px}
 .breakdown-table tr:hover td{background:var(--surface2)}
 .mini-bar-bg{background:var(--surface2);border-radius:3px;height:6px;width:100%;overflow:hidden}
 .mini-bar-fill{height:6px;border-radius:3px;transition:width .5s ease}
+.hbar-chart{display:flex;flex-direction:column;gap:9px;padding:4px 0}
+.hbar-row{display:grid;grid-template-columns:minmax(90px,130px) 1fr auto;align-items:center;gap:10px}
+.hbar-label{font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+.hbar-track{background:var(--surface2);border-radius:4px;height:10px;overflow:hidden;min-width:40px}
+.hbar-fill{height:10px;border-radius:4px;transition:width .45s ease}
+.hbar-val{font-size:12px;font-weight:700;color:var(--muted);text-align:right;white-space:nowrap}
 
 
 
@@ -290,14 +296,20 @@ textarea.fc{resize:vertical;min-height:70px}
 .age-dot-green{background:#4e9a3a}
 .age-dot-amber{background:#b86b00}
 .age-dot-red  {background:#8a2a18}
+.insp-last{display:flex;align-items:flex-start;gap:7px}
+.insp-dot{display:inline-block;width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:2px}
+.insp-dot-pass{background:#4e9a3a;box-shadow:0 0 0 2px #c8eabf}
+.insp-dot-fail{background:#c0392b;box-shadow:0 0 0 2px #f5ceca}
+.insp-last-date{font-size:12px;font-weight:600;color:var(--text);line-height:1.3}
+.insp-last-note{font-size:11px;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3}
 
 /* ═══════════ MOBILE ═══════════ */
 .mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:150;box-shadow:0 -2px 12px rgba(0,0,0,.08);padding-bottom:env(safe-area-inset-bottom,0px)}
 .mobile-nav-items{display:flex;justify-content:space-around;align-items:stretch}
-.mnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 4px 14px;min-height:48px;cursor:pointer;color:var(--muted);font-size:12px;gap:4px;border:none;background:transparent;transition:color .12s;position:relative}
+.mnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px 12px;min-height:48px;cursor:pointer;color:var(--muted);border:none;background:transparent;transition:color .12s;position:relative}
 .mnav-item:active{opacity:.7;transition:opacity .08s}
 .mnav-item.active{color:var(--accent)}
-.mnav-item span:first-child{font-size:26px;line-height:1}
+.mnav-item svg{width:28px;height:28px}
 .mnav-badge{position:absolute;top:6px;right:50%;transform:translateX(14px);background:var(--warn);color:#fff;font-size:9px;font-weight:700;border-radius:10px;padding:1px 5px;min-width:16px;text-align:center}
 .hamburger{display:none;background:transparent;border:1px solid var(--border);border-radius:7px;padding:5px 10px;cursor:pointer;font-size:18px;line-height:1;color:var(--muted)}
 .hamburger:hover{color:var(--accent);border-color:var(--accent)}
@@ -335,6 +347,15 @@ textarea.fc{resize:vertical;min-height:70px}
   /* Shrink photo column */
   .trip-gear-gtable td:nth-child(1){width:32px}
   .trip-gear-gtable .td-photo img,.trip-gear-gtable .td-photo{width:28px;height:28px}
+
+  /* ── Mobile font size bumps ── */
+  body{font-size:15px}
+  .tag{font-size:11px}
+  .fl,.dfl,.stat-label,.kpi-label,.kpi-sub{font-size:12px}
+  .card-brand,.card-meta-row,.td-name small,.insp-last-note{font-size:13px}
+  .gtable{font-size:14px}
+  .gtable th{font-size:12px}
+  .fc,.fi{font-size:14px}
 }
 
 /* ═══════════ TRIPS ═══════════ */
@@ -623,6 +644,7 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
             <th>Produced</th>
             <th>Age</th>
             <th>Status</th>
+            <th>Last Inspected</th>
             <th>Actions</th>
           </tr></thead>
           <tbody id="inspTbody"></tbody>
@@ -654,13 +676,14 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
         </div>
         <div class="chart-card">
           <div class="chart-title">Collection Breakdown</div>
-          <div class="chart-subtitle">Items distribution</div>
+          <div class="chart-subtitle">Items by count</div>
           <div class="chart-tabs">
             <button class="chart-tab active" onclick="setCatMode('category',this)">Category</button>
             <button class="chart-tab" onclick="setCatMode('type',this)">Type</button>
+            <button class="chart-tab" onclick="setCatMode('subtype',this)">Subtype</button>
             <button class="chart-tab" onclick="setCatMode('brand',this)">Brand</button>
           </div>
-          <div class="chart-wrap"><canvas id="chartCatBreakdown"></canvas></div>
+          <div id="chartCatBreakdown"></div>
         </div>
       </div>
       <div class="charts-grid">
@@ -676,13 +699,14 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
         </div>
         <div class="chart-card">
           <div class="chart-title">Spend Breakdown</div>
-          <div class="chart-subtitle">Value distribution</div>
+          <div class="chart-subtitle">Items by price</div>
           <div class="chart-tabs">
             <button class="chart-tab active" onclick="setSpendCatMode('category',this)">Category</button>
             <button class="chart-tab" onclick="setSpendCatMode('type',this)">Type</button>
+            <button class="chart-tab" onclick="setSpendCatMode('subtype',this)">Subtype</button>
             <button class="chart-tab" onclick="setSpendCatMode('brand',this)">Brand</button>
           </div>
-          <div class="chart-wrap"><canvas id="chartSpendCat"></canvas></div>
+          <div id="chartSpendCat"></div>
         </div>
       </div>
       <div class="charts-grid">
@@ -842,6 +866,35 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('returnOverlay')">Cancel</button>
       <button class="btn btn-primary" id="confirmReturnBtn" onclick="confirmReturn()">Confirm Return</button>
+    </div>
+  </div>
+</div>
+
+<!-- FAIL INSPECTION MODAL -->
+<div class="overlay" id="failInspOverlay">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-title" style="color:var(--danger)">Failed Inspection</div>
+    <input type="hidden" id="fiGearId">
+    <div style="font-size:13px;color:var(--muted);margin-bottom:12px" id="fiGearName"></div>
+    <div class="form-grid" style="grid-template-columns:1fr">
+      <div class="fg">
+        <label class="fl">Inspection Result / Notes *</label>
+        <textarea class="fc" id="fiNotes" rows="3" placeholder="Describe what failed (cracks, worn sheath, deformed parts…)" style="resize:vertical"></textarea>
+      </div>
+      <div class="fg">
+        <label class="fl">Retirement Reason</label>
+        <select class="fc" id="fiRetireReason">
+          <option value="damaged">Damaged</option>
+          <option value="worn_out">Worn out</option>
+          <option value="upgraded">Upgraded / replaced</option>
+          <option value="sold">Sold</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('failInspOverlay')">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmFailInspection()">Retire Item</button>
     </div>
   </div>
 </div>
@@ -2100,20 +2153,24 @@ function buildCountYearChart(data){
 }
 
 function buildCatChart(data){
-  destroyChart('cb');
   let groups={};
   if(catMode==='category') CATS.forEach(c=>groups[c]=data.filter(i=>i.category===c).length);
   else if(catMode==='type') data.forEach(i=>{if(i.type) groups[i.type]=(groups[i.type]||0)+1;});
+  else if(catMode==='subtype') data.forEach(i=>{if(i.subtype) groups[i.subtype]=(groups[i.subtype]||0)+1;});
   else data.forEach(i=>{if(i.brand) groups[i.brand]=(groups[i.brand]||0)+1;});
-  const sorted=Object.entries(groups).sort((a,b)=>b[1]-a[1]).slice(0,10);
-  const colors=catMode==='category'?CATS.map(c=>getCatColor(c).bg):PALETTE.slice(0,sorted.length);
-  _charts.cb=new Chart(document.getElementById('chartCatBreakdown').getContext('2d'),{
-    type:'doughnut',
-    data:{labels:sorted.map(e=>e[0]),datasets:[{data:sorted.map(e=>e[1]),backgroundColor:colors,borderWidth:2,borderColor:'#fff',hoverOffset:6}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
-      plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11},padding:10}},
-        tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.raw} item${ctx.raw!==1?'s':''}`}}}}
-  });
+  const sorted=Object.entries(groups).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,15);
+  const total=sorted.reduce((s,e)=>s+e[1],0)||1;
+  const el=document.getElementById('chartCatBreakdown');
+  if(!sorted.length){el.innerHTML='<div style="color:var(--muted);font-size:12px;padding:16px 0">No data</div>';return;}
+  el.innerHTML=`<div class="hbar-chart">${sorted.map((e,i)=>{
+    const pct=Math.round(e[1]/total*100);
+    const color=catMode==='category'?getCatColor(e[0]).border:PALETTE[i%PALETTE.length];
+    return `<div class="hbar-row">
+      <div class="hbar-label" title="${esc(e[0])}">${esc(e[0])}</div>
+      <div class="hbar-track"><div class="hbar-fill" style="width:${pct}%;background:${color}"></div></div>
+      <div class="hbar-val">${e[1]} <span style="font-weight:400;font-size:10px">(${pct}%)</span></div>
+    </div>`;
+  }).join('')}</div>`;
 }
 
 function buildSpendYearChart(data){
@@ -2135,20 +2192,24 @@ function buildSpendYearChart(data){
 }
 
 function buildSpendCatChart(data){
-  destroyChart('sc');
   let groups={};
   if(spendCatMode==='category') CATS.forEach(c=>groups[c]=Math.round(data.filter(i=>i.category===c).reduce((s,i)=>s+parseFloat(i.price||0),0)));
   else if(spendCatMode==='type') data.forEach(i=>{if(i.type) groups[i.type]=Math.round((groups[i.type]||0)+parseFloat(i.price||0));});
+  else if(spendCatMode==='subtype') data.forEach(i=>{if(i.subtype) groups[i.subtype]=Math.round((groups[i.subtype]||0)+parseFloat(i.price||0));});
   else data.forEach(i=>{if(i.brand) groups[i.brand]=Math.round((groups[i.brand]||0)+parseFloat(i.price||0));});
-  const sorted=Object.entries(groups).sort((a,b)=>b[1]-a[1]).slice(0,10);
-  const colors=spendCatMode==='category'?CATS.map(c=>getCatColor(c).bg):PALETTE.slice(0,sorted.length);
-  _charts.sc=new Chart(document.getElementById('chartSpendCat').getContext('2d'),{
-    type:'doughnut',
-    data:{labels:sorted.map(e=>e[0]),datasets:[{data:sorted.map(e=>e[1]),backgroundColor:colors,borderWidth:2,borderColor:'#fff',hoverOffset:6}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
-      plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11},padding:10}},
-        tooltip:{callbacks:{label:ctx=>` ${ctx.label}: €${ctx.raw}`}}}}
-  });
+  const sorted=Object.entries(groups).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,15);
+  const total=sorted.reduce((s,e)=>s+e[1],0)||1;
+  const el=document.getElementById('chartSpendCat');
+  if(!sorted.length){el.innerHTML='<div style="color:var(--muted);font-size:12px;padding:16px 0">No data</div>';return;}
+  el.innerHTML=`<div class="hbar-chart">${sorted.map((e,i)=>{
+    const pct=Math.round(e[1]/total*100);
+    const color=spendCatMode==='category'?getCatColor(e[0]).border:PALETTE[i%PALETTE.length];
+    return `<div class="hbar-row">
+      <div class="hbar-label" title="${esc(e[0])}">${esc(e[0])}</div>
+      <div class="hbar-track"><div class="hbar-fill" style="width:${pct}%;background:${color}"></div></div>
+      <div class="hbar-val">€${e[1].toLocaleString()} <span style="font-weight:400;font-size:10px">(${pct}%)</span></div>
+    </div>`;
+  }).join('')}</div>`;
 }
 
 function buildBreakdownTables(data){
@@ -2432,6 +2493,40 @@ async function logInspectionNow(gearId){
   saveLocal();
   toast('Inspection logged for '+esc(item.name));
 }
+function openFailInspection(gearId){
+  const item=items.find(i=>i.gear_id===gearId); if(!item) return;
+  document.getElementById('fiGearId').value=gearId;
+  document.getElementById('fiGearName').textContent=item.name+(item.brand?' — '+item.brand:'');
+  document.getElementById('fiNotes').value='';
+  document.getElementById('fiRetireReason').value='damaged';
+  document.getElementById('failInspOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('fiNotes').focus(),80);
+}
+async function confirmFailInspection(){
+  const gearId=document.getElementById('fiGearId').value;
+  const notes=document.getElementById('fiNotes').value.trim();
+  const reasonKey=document.getElementById('fiRetireReason').value;
+  if(!notes){toast('Please describe the inspection result');return;}
+  const item=items.find(i=>i.gear_id===gearId); if(!item) return;
+  const _rl={worn_out:'Worn out',damaged:'Damaged',upgraded:'Upgraded / replaced',sold:'Sold',other:'Other'};
+  const reasonLabel=_rl[reasonKey]||reasonKey;
+  // Add service log entry
+  const log=getServiceLog(item);
+  log.unshift({date:new Date().toISOString().slice(0,10),type:'Inspection',note:'FAILED: '+notes});
+  item.service_log=JSON.stringify(log);
+  // Retire the item
+  item.status='retired';
+  const cleanNotes=(item.notes||'').replace(/^\[Retired:[^\]]*\]\s*/,'');
+  item.notes='[Retired: '+reasonLabel+'] '+cleanNotes;
+  closeModal('failInspOverlay');
+  try{
+    if(getApiUrl()) await api('updateGear',{gear_id:gearId,status:item.status,notes:item.notes,service_log:item.service_log});
+  }catch(e){toast('API: '+e.message);}
+  saveLocal();
+  renderInspection();
+  renderAll();
+  toast(esc(item.name)+' retired after failed inspection');
+}
 async function addServiceLogEntry(gearId){
   const item=items.find(i=>i.gear_id===gearId); if(!item) return;
   const type=document.getElementById('slogType').value;
@@ -2526,7 +2621,7 @@ function renderInspection(){
   });
 
   if(!sorted.length){
-    document.getElementById('inspTbody').innerHTML=`<tr><td colspan="9" style="text-align:center;padding:36px;color:var(--muted)">No items with production date set</td></tr>`;
+    document.getElementById('inspTbody').innerHTML=`<tr><td colspan="10" style="text-align:center;padding:36px;color:var(--muted)">No items with production date set</td></tr>`;
     return;
   }
 
@@ -2538,6 +2633,18 @@ function renderInspection(){
     const photo=`<td><div class="td-photo">${safePhoto?`<img src="${safePhoto}" onerror="this.parentElement.innerHTML='${emoji}'" alt="">`:emoji}</div></td>`;
     const statusBadge=i.status==='lent'?'<span class="tag tag-lent">Lent</span>':i.status==='retired'?'<span class="tag tag-retired">Retired</span>':'<span class="tag tag-camping">Active</span>';
     const dotColor={'green':'age-dot-green','amber':'age-dot-amber','red':'age-dot-red'}[cls];
+    // Last inspection from service log
+    const log=getServiceLog(i);
+    const lastInsp=log.find(e=>e.type==='Inspection');
+    const failed=lastInsp&&lastInsp.note&&lastInsp.note.startsWith('FAILED:');
+    const inspCell=(()=>{
+      if(!lastInsp) return `<td style="color:var(--muted);font-size:12px">—</td>`;
+      const dot=failed
+        ?`<span class="insp-dot insp-dot-fail" title="Last inspection failed"></span>`
+        :`<span class="insp-dot insp-dot-pass" title="Last inspection passed"></span>`;
+      const noteText=failed?lastInsp.note.replace(/^FAILED:\s*/,''):lastInsp.note;
+      return `<td><div class="insp-last">${dot}<div><div class="insp-last-date">${esc(lastInsp.date)}</div><div class="insp-last-note" title="${esc(noteText)}">${esc(noteText)}</div></div></div></td>`;
+    })();
     return `<tr class="insp-row-${cls}">
       ${photo}
       <td class="td-name" onclick="openDetail('${i.gear_id}')">${esc(i.name)}<small>${esc(i.brand)}${i.model?' · '+esc(i.model):''}</small></td>
@@ -2547,8 +2654,10 @@ function renderInspection(){
       <td>${i.date_produced||'—'}</td>
       <td><span class="age-dot ${dotColor}"></span>${ageLabel(yrs)}</td>
       <td>${statusBadge}</td>
+      ${inspCell}
       <td><div class="td-actions">
-        <button class="btn btn-ghost btn-sm icon-btn" onclick="logInspectionNow('${i.gear_id}')" title="Log Inspection Today">${IC.shield}</button>
+        ${i.status!=='retired'?`<button class="btn btn-ghost btn-sm icon-btn" onclick="logInspectionNow('${i.gear_id}')" title="Log Inspection — Passed">${IC.shield}</button>`:''}
+        ${i.status!=='retired'?`<button class="btn btn-warn btn-sm icon-btn" onclick="openFailInspection('${i.gear_id}')" title="Failed Inspection — Retire">${IC.warn}</button>`:''}
         <button class="btn btn-ghost btn-sm icon-btn" onclick="openEdit('${i.gear_id}')" title="Edit">${IC.pencil}</button>
         <button class="btn btn-danger btn-sm icon-btn" onclick="deleteItem('${i.gear_id}')" title="Delete">${IC.x}</button>
       </div></td>
@@ -2965,12 +3074,12 @@ function exportCSV(){
 <button id="fab" class="fab" onclick="openAddModal()" title="Add Gear">+</button>
 <nav class="mobile-nav">
   <div class="mobile-nav-items">
-    <button class="mnav-item active" data-sec="all" onclick="showSec('all')"><span><svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="7" height="7" rx="1"/><rect x="11" y="2" width="7" height="7" rx="1"/><rect x="2" y="11" width="7" height="7" rx="1"/><rect x="11" y="11" width="7" height="7" rx="1"/></svg></span><span>All</span></button>
-    <button class="mnav-item" data-sec="lent" onclick="showSec('lent')"><span><svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4h4v4"/><path d="M17 4l-7 7"/><path d="M9 5H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-5"/></svg></span><span>Lent</span><span class="mnav-badge" id="mb-lent" style="display:none"></span></button>
-    <button class="mnav-item" data-sec="trips" onclick="showSec('trips')"><span><svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2C7.2 2 5 4.2 5 7c0 4 5 11 5 11s5-7 5-11c0-2.8-2.2-5-5-5z"/><circle cx="10" cy="7" r="1.5"/></svg></span><span>Trips</span><span class="mnav-badge" id="mb-trips" style="display:none"></span></button>
-    <button class="mnav-item" data-sec="inspection" onclick="showSec('inspection')"><span><svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2l7 3v5c0 4-3 7-7 8C6 17 3 14 3 10V5l7-3z"/><polyline points="7,10 9,12 13,8"/></svg></span><span>Inspect</span></button>
-    <button class="mnav-item" data-sec="statistics" onclick="showSec('statistics')"><span><svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="3" height="6" rx="0.5"/><rect x="8.5" y="7" width="3" height="10" rx="0.5"/><rect x="14" y="4" width="3" height="13" rx="0.5"/></svg></span><span>Stats</span></button>
-    <button class="mnav-item" data-sec="settings" onclick="showSec('settings')"><span><svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="17" y2="6"/><line x1="3" y1="14" x2="17" y2="14"/><circle cx="7" cy="6" r="2"/><circle cx="13" cy="14" r="2"/></svg></span><span>Settings</span></button>
+    <button class="mnav-item active" data-sec="all" onclick="showSec('all')" title="All Gear"><svg width="28" height="28" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="7" height="7" rx="1"/><rect x="11" y="2" width="7" height="7" rx="1"/><rect x="2" y="11" width="7" height="7" rx="1"/><rect x="11" y="11" width="7" height="7" rx="1"/></svg></button>
+    <button class="mnav-item" data-sec="lent" onclick="showSec('lent')" title="Lent Out"><svg width="28" height="28" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4h4v4"/><path d="M17 4l-7 7"/><path d="M9 5H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-5"/></svg><span class="mnav-badge" id="mb-lent" style="display:none"></span></button>
+    <button class="mnav-item" data-sec="trips" onclick="showSec('trips')" title="Trips"><svg width="28" height="28" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2C7.2 2 5 4.2 5 7c0 4 5 11 5 11s5-7 5-11c0-2.8-2.2-5-5-5z"/><circle cx="10" cy="7" r="1.5"/></svg><span class="mnav-badge" id="mb-trips" style="display:none"></span></button>
+    <button class="mnav-item" data-sec="inspection" onclick="showSec('inspection')" title="Inspection"><svg width="28" height="28" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2l7 3v5c0 4-3 7-7 8C6 17 3 14 3 10V5l7-3z"/><polyline points="7,10 9,12 13,8"/></svg></button>
+    <button class="mnav-item" data-sec="statistics" onclick="showSec('statistics')" title="Statistics"><svg width="28" height="28" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="3" height="6" rx="0.5"/><rect x="8.5" y="7" width="3" height="10" rx="0.5"/><rect x="14" y="4" width="3" height="13" rx="0.5"/></svg></button>
+    <button class="mnav-item" data-sec="settings" onclick="showSec('settings')" title="Settings"><svg width="28" height="28" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="17" y2="6"/><line x1="3" y1="14" x2="17" y2="14"/><circle cx="7" cy="6" r="2"/><circle cx="13" cy="14" r="2"/></svg></button>
   </div>
 </nav>
 </div><!-- /app-shell -->
