@@ -343,6 +343,7 @@ textarea.fc{resize:vertical;min-height:70px}
 
   /* Hide header items that don't fit on small screens */
   .hdr-add-btn{display:none}
+  .fab-action-btn{display:none}
   .view-toggle{display:none}
   #user-name{display:none !important}
   .form-grid{grid-template-columns:1fr}
@@ -644,7 +645,7 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
     <div id="sec-lent" class="sec-hidden">
       <div class="page-header">
         <div class="page-title">&#129309; Lent Out <small>Currently with others</small></div>
-        <button class="btn btn-primary btn-sm" onclick="openNewLending()">+ New Lending</button>
+        <button class="btn btn-primary btn-sm fab-action-btn" onclick="openNewLending()">+ New Lending</button>
       </div>
       <div id="lentContent"></div>
       <div id="lentHistorySection">
@@ -663,7 +664,7 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
       <div id="trips-list-view">
         <div class="page-header">
           <div class="page-title">&#128506; Trips</div>
-          <button class="btn btn-primary btn-sm" onclick="openAddTrip()">+ New Trip</button>
+          <button class="btn btn-primary btn-sm fab-action-btn" onclick="openAddTrip()">+ New Trip</button>
         </div>
         <div id="tripsContent"></div>
       </div>
@@ -1374,7 +1375,12 @@ function showSec(name){
   else if(name==='trips'){ updateTripStatuses(); renderTrips(); }
   else renderAll();
   const fab=document.getElementById('fab');
-  if(fab) fab.style.display=name==='all'?'flex':'none';
+  if(fab){
+    const fabSecs={'all':['openAddModal','Add Gear'],'lent':['openNewLending','New Lending'],'trips':['openAddTrip','New Trip']};
+    const fc=fabSecs[name];
+    if(fc&&window.innerWidth<=720){fab.onclick=new Function(fc[0]+'()');fab.title=fc[1];fab.style.display='flex';}
+    else{fab.style.display='none';}
+  }
 }
 
 // ════ DATA HELPERS ════
@@ -1696,7 +1702,9 @@ function renderLent(){
       const dues=entries.map(e=>e.lend.date_due).filter(Boolean).sort();
       const maxDateDue=dues[dues.length-1]||'—';
       const gid='lg-'+idx++;
-      rows+=`<tr class="lent-group-header" id="${gid}" onclick="toggleLentGroup('${gid}')"><td colspan="6"><span class="group-toggle">${IC.chevR}</span>${esc(person)}<span class="group-count">${entries.length}</span><span class="lent-grp-meta">Lent: ${esc(minDateLent)}</span><span class="lent-grp-meta">Return by: ${esc(maxDateDue)}</span></td></tr>`;
+      const lendIds=entries.map(e=>e.lend.lend_id).filter(Boolean);
+      const gearIds=entries.map(e=>e.item.gear_id);
+      rows+=`<tr class="lent-group-header" id="${gid}" onclick="toggleLentGroup('${gid}')"><td colspan="6"><span class="group-toggle">${IC.chevR}</span>${esc(person)}<span class="group-count">${entries.length}</span><span class="lent-grp-meta">Lent: ${esc(minDateLent)}</span><span class="lent-grp-meta">Return by: ${esc(maxDateDue)}</span><button class="btn btn-warn btn-sm" style="margin-left:auto;padding:2px 10px;font-size:12px" onclick="event.stopPropagation();returnAllForPerson(${JSON.stringify(person)},${JSON.stringify(lendIds)},${JSON.stringify(gearIds)})">${IC.ret} Return All</button></td></tr>`;
       entries.forEach(({item:i,lend})=>{
         const overdue=lend.date_due&&lend.date_due<today;
         rows+=`<tr class="lent-sub-row hidden">
@@ -2713,6 +2721,17 @@ async function confirmReturn(){
   if(lend){lend.date_returned=date_returned;lend.condition_on_return=cond;}
   const item=items.find(i=>i.gear_id===gear_id);if(item) item.status='active';
   saveLocal();closeModal('returnOverlay');toast('Gear marked as returned');renderAll();
+}
+
+async function returnAllForPerson(person,lendIds,gearIds){
+  if(!confirm(`Mark all ${gearIds.length} item${gearIds.length>1?'s':''} from ${person} as returned?`)) return;
+  const today=new Date().toISOString().slice(0,10);
+  for(let i=0;i<lendIds.length;i++){
+    try{if(getApiUrl()) await api('returnGear',{lend_id:lendIds[i],gear_id:gearIds[i],date_returned:today,condition_on_return:''});}catch(e){toast('API error: '+e.message);break;}
+    const lend=lends.find(l=>l.lend_id===lendIds[i]);if(lend){lend.date_returned=today;lend.condition_on_return='';}
+    const item=items.find(it=>it.gear_id===gearIds[i]);if(item) item.status='active';
+  }
+  saveLocal();renderAll();toast(`All gear from ${person} marked as returned`);
 }
 
 // ════ SERVICE LOG ════
