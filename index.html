@@ -2667,8 +2667,9 @@ async function confirmNewLending(){
 }
 
 // ════ CUSTOM FIELDS ON GEAR ITEMS ════
+const CF_LABEL_DEFAULTS=['Colour','Material','Size','EU Size','UK Size','US Size','Weight (g)','Serial No.','Model','Year','Certification'];
 function getCfLabelOptions(){
-  const labels=new Set();
+  const labels=new Set(CF_LABEL_DEFAULTS);
   items.forEach(it=>(it.custom_fields||[]).forEach(f=>{if(f.label) labels.add(f.label);}));
   return [...labels].sort();
 }
