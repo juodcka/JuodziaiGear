@@ -642,7 +642,10 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
     </div>
 
     <div id="sec-lent" class="sec-hidden">
-      <div class="page-header"><div class="page-title">&#129309; Lent Out <small>Currently with others</small></div></div>
+      <div class="page-header">
+        <div class="page-title">&#129309; Lent Out <small>Currently with others</small></div>
+        <button class="btn btn-primary btn-sm" onclick="openNewLending()">+ New Lending</button>
+      </div>
       <div id="lentContent"></div>
       <div id="lentHistorySection">
         <div class="collapsible-header" onclick="toggleLentHistory()">
@@ -884,6 +887,11 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
         <div style="font-size:11px;color:var(--muted);margin-top:4px">Upload to Google Drive &rarr; Share &rarr; Copy link</div>
       </div>
       <div class="fg full"><label class="fl">Notes</label><textarea class="fc" id="fNotes" placeholder="Condition, usage history, inspection dates&hellip;"></textarea></div>
+      <div class="fg full">
+        <label class="fl">Custom Fields</label>
+        <div id="fCustomFields"></div>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="addCustomField()" style="margin-top:6px;font-size:12px">+ Add field</button>
+      </div>
     </div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('addOverlay')">Cancel</button>
@@ -915,6 +923,43 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="closeModal('lendOverlay')">Cancel</button>
       <button class="btn btn-primary" id="confirmLendBtn" onclick="confirmLend()">Confirm Lend</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW LENDING MODAL (person + dates first, then gear picker) -->
+<div class="overlay" id="newLendingOverlay">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-title">New Lending</div>
+    <!-- Step 1: person + dates -->
+    <div id="nlStep1">
+      <div class="form-grid" style="grid-template-columns:1fr">
+        <datalist id="nlBorrowerList"></datalist>
+        <div class="fg"><label class="fl">Lent To *</label><input type="text" class="fc" id="nlLentTo" placeholder="Person's name" list="nlBorrowerList" autocomplete="off"></div>
+        <div class="fg"><label class="fl">Date Lent</label><input type="date" class="fc" id="nlDateLent"></div>
+        <div class="fg"><label class="fl">Expected Return Date</label><input type="date" class="fc" id="nlDateDue"></div>
+        <div class="fg"><label class="fl">Notes</label><input type="text" class="fc" id="nlNotes" placeholder="Optional notes"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeModal('newLendingOverlay')">Cancel</button>
+        <button class="btn btn-primary" onclick="nlStep2()">Select Gear →</button>
+      </div>
+    </div>
+    <!-- Step 2: gear picker -->
+    <div id="nlStep2" style="display:none">
+      <div style="margin-bottom:10px;display:flex;align-items:center;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="nlBack()" style="padding:4px 10px">← Back</button>
+        <div style="font-size:13px;color:var(--muted)">Select items to lend to <strong id="nlPersonLabel"></strong></div>
+      </div>
+      <input type="text" class="fc" id="nlPickerSearch" placeholder="Search gear…" oninput="nlFilterPicker()" style="margin-bottom:10px">
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-bottom:8px;cursor:pointer">
+        <input type="checkbox" id="nlAvailOnly" checked onchange="nlFilterPicker()"> Available only
+      </label>
+      <div class="picker-list" id="nlPickerList"></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeModal('newLendingOverlay')">Cancel</button>
+        <button class="btn btn-primary" id="nlConfirmBtn" onclick="confirmNewLending()">Confirm Lending</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1659,7 +1704,7 @@ function renderLent(){
           <td class="td-name" onclick="openDetail('${i.gear_id}')" style="cursor:pointer">${esc(i.name)}<small>${esc(i.brand)}</small></td>
           <td>${esc(lend.date_lent)||'—'}</td>
           <td style="color:${overdue?'var(--danger)':'var(--text)'};font-weight:${overdue?700:400}">${esc(lend.date_due)||'—'}${overdue?' '+IC.warn:''}</td>
-          <td>${esc(lend.notes)||'—'}</td>
+          <td>${(()=>{const parts=[];if(lend.notes) parts.push(esc(lend.notes));if(lend.custom_fields&&lend.custom_fields.length) parts.push(lend.custom_fields.map(f=>`<span style="color:var(--muted)">${esc(f.label)}:</span> ${esc(f.value)}`).join(' · '));return parts.join('<br>')||'—';})()}</td>
           <td><button class="btn btn-warn btn-sm icon-btn" onclick="openReturn('${i.gear_id}')" title="Mark Returned">${IC.ret} Return</button></td>
         </tr>`;
       });
@@ -2369,6 +2414,7 @@ function clearForm(){
   ['fDateBought','fDateProd','fPrice','fWeight','fLentDate','fLentReturn'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fStatus').value='active'; document.getElementById('lentFields').style.display='none';
   const _rg=document.getElementById('retireReasonGroup'); if(_rg) _rg.style.display='none';
+  document.getElementById('fCustomFields').innerHTML='';
   populateBrandSelect(); document.getElementById('fCategory').value='';
   document.getElementById('fType').innerHTML='<option value="">— select category first —</option>'; document.getElementById('fType').disabled=true;
   document.getElementById('fSubtype').innerHTML='<option value="">— select type first —</option>'; document.getElementById('fSubtype').disabled=true;
@@ -2398,6 +2444,9 @@ function openEdit(id){
   setFormSelects(item); toggleLentFields();
   const lend=currentLend(id)||{};
   document.getElementById('fLentTo').value=lend.lent_to||'';document.getElementById('fLentDate').value=lend.date_lent||'';document.getElementById('fLentReturn').value=lend.date_due||'';
+  // Populate custom fields
+  document.getElementById('fCustomFields').innerHTML='';
+  (item.custom_fields||[]).forEach(f=>addCustomField(f.label,f.value));
   closeModal('detailOverlay'); document.getElementById('addOverlay').classList.add('open');
 }
 async function saveItem(){
@@ -2409,7 +2458,8 @@ async function saveItem(){
     date_purchased:document.getElementById('fDateBought').value,date_produced:document.getElementById('fDateProd').value,
     price:document.getElementById('fPrice').value,weight_g:document.getElementById('fWeight').value,
     size_color:document.getElementById('fSize').value.trim(),serial_cert:document.getElementById('fSerial').value.trim(),
-    photo_url:document.getElementById('fPhotoUrl').value.trim()};
+    photo_url:document.getElementById('fPhotoUrl').value.trim(),
+    custom_fields:getCustomFields()};
   let _saveNotes=document.getElementById('fNotes').value.trim();
   const _saveStatus=document.getElementById('fStatus').value;
   body.status=_saveStatus;
@@ -2529,6 +2579,110 @@ async function confirmLend(){
   renderAll();
 }
 
+// ════ NEW LENDING (from Lent Out page) ════
+let _nlPendingLends=[];
+
+function openNewLending(){
+  populateBorrowerList();
+  const dl=document.getElementById('nlBorrowerList');
+  const names=[...new Set(lends.map(l=>l.lent_to).filter(Boolean))].sort();
+  if(dl) dl.innerHTML=names.map(n=>`<option value="${esc(n)}">`).join('');
+  document.getElementById('nlLentTo').value='';
+  document.getElementById('nlDateLent').value=new Date().toISOString().slice(0,10);
+  document.getElementById('nlDateDue').value='';
+  document.getElementById('nlNotes').value='';
+  document.getElementById('nlStep1').style.display='';
+  document.getElementById('nlStep2').style.display='none';
+  _nlPendingLends=[];
+  document.getElementById('newLendingOverlay').classList.add('open');
+}
+function nlStep2(){
+  const lent_to=document.getElementById('nlLentTo').value.trim();
+  if(!lent_to){toast('Please enter who you are lending to');return;}
+  document.getElementById('nlPersonLabel').textContent=lent_to;
+  document.getElementById('nlStep1').style.display='none';
+  document.getElementById('nlStep2').style.display='';
+  document.getElementById('nlPickerSearch').value='';
+  nlFilterPicker();
+}
+function nlBack(){
+  document.getElementById('nlStep1').style.display='';
+  document.getElementById('nlStep2').style.display='none';
+}
+function nlFilterPicker(){
+  const search=document.getElementById('nlPickerSearch').value.toLowerCase();
+  const availOnly=document.getElementById('nlAvailOnly').checked;
+  const dateLent=document.getElementById('nlDateLent').value;
+  const dateDue=document.getElementById('nlDateDue').value||'9999-12-31';
+  const el=document.getElementById('nlPickerList');
+  const candidates=items.filter(i=>i.status!=='retired'&&(!search||(i.name||'').toLowerCase().includes(search)||(i.brand||'').toLowerCase().includes(search)));
+  if(!candidates.length){el.innerHTML='<div style="padding:16px;text-align:center;color:var(--muted)">No items found</div>';return;}
+  const rows=candidates.map(item=>{
+    const lentConflict=item.status==='lent'||isItemLentDuring(item.gear_id,dateLent,dateDue);
+    const tripConflict=!lentConflict&&isItemInTripDuring(item.gear_id,dateLent,dateDue);
+    const disabled=lentConflict||tripConflict;
+    if(availOnly&&disabled) return '';
+    const conflictMsg=lentConflict?'Already lent out':tripConflict?'In a trip during this period':'';
+    const _pEmoji=CAT_EMOJI[item.category]||'🎒';
+    const photo=item.photo_url&&safeUrl(item.photo_url)?`<img src="${safeUrl(item.photo_url)}" style="width:32px;height:32px;border-radius:6px;object-fit:cover" onerror="this.style.display='none';this.nextSibling.style.display=''"><span style="display:none;font-size:20px">${_pEmoji}</span>`:`<span style="font-size:20px">${_pEmoji}</span>`;
+    const statusBadge=lentConflict?`<span class="tag tag-lent" style="font-size:10px">Lent</span>`:tripConflict?`<span class="tag" style="font-size:10px;background:var(--surface2)">In Trip</span>`:'';
+    return `<div class="picker-row${disabled?' disabled':''}">
+      <input type="checkbox" class="picker-cb" data-id="${esc(item.gear_id)}"${disabled?' disabled':''}>
+      ${photo}
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:14px">${esc(item.name)} ${statusBadge}</div>
+        <div style="color:var(--muted);font-size:12px">${esc(item.brand||'')}${item.weight_g?' · '+fmtWeight(parseFloat(item.weight_g)):''}</div>
+        ${conflictMsg?`<div class="picker-conflict">${esc(conflictMsg)}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+  el.innerHTML=rows||'<div style="padding:16px;text-align:center;color:var(--muted)">No available items</div>';
+}
+async function confirmNewLending(){
+  const lent_to=document.getElementById('nlLentTo').value.trim();
+  const date_lent=document.getElementById('nlDateLent').value;
+  const date_due=document.getElementById('nlDateDue').value;
+  const notes=document.getElementById('nlNotes').value.trim();
+  const checked=[...document.querySelectorAll('#nlPickerList .picker-cb:checked:not(:disabled)')].map(cb=>cb.dataset.id);
+  if(!checked.length){toast('Select at least one item');return;}
+  const btn=document.getElementById('nlConfirmBtn');
+  btn.disabled=true;btn.textContent='Saving…';
+  for(const gear_id of checked){
+    const item=items.find(i=>i.gear_id===gear_id); if(!item) continue;
+    const lendRecord={lend_id:'LEND-'+Date.now().toString(36).toUpperCase()+'-'+gear_id.slice(-4),gear_id,gear_name:item.name,lent_to,date_lent,date_due,date_returned:'',condition_on_return:'',notes};
+    if(getApiUrl()){
+      try{
+        const r=await api('addLend',{gear_id,gear_name:item.name,lent_to,date_lent,date_due,notes});
+        if(r&&r.lend_id) lendRecord.lend_id=r.lend_id;
+      }catch(e){toast('API: '+e.message);}
+    }
+    lends.unshift(lendRecord);
+    item.status='lent';
+  }
+  saveLocal();
+  btn.disabled=false;btn.textContent='Confirm Lending';
+  closeModal('newLendingOverlay');
+  toast(`${checked.length} item${checked.length>1?'s':''} lent to ${lent_to}`);
+  renderAll();
+}
+
+// ════ CUSTOM FIELDS ON GEAR ITEMS ════
+function addCustomField(label='',value=''){
+  const row=document.createElement('div');
+  row.className='cf-row';
+  row.style.cssText='display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:center;margin-bottom:6px';
+  row.innerHTML=`<input type="text" class="fc cf-label" placeholder="Label (e.g. Size)" value="${esc(label)}" style="font-size:13px">
+    <input type="text" class="fc cf-value" placeholder="Value (e.g. 44)" value="${esc(value)}" style="font-size:13px">
+    <button type="button" onclick="this.closest('.cf-row').remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:0 4px">×</button>`;
+  document.getElementById('fCustomFields').appendChild(row);
+}
+function getCustomFields(){
+  return [...document.querySelectorAll('#fCustomFields .cf-row')].map(row=>({
+    label:row.querySelector('.cf-label').value.trim(),
+    value:row.querySelector('.cf-value').value.trim()
+  })).filter(f=>f.label||f.value);
+}
+
 // ════ RETURN ════
 function openReturn(gear_id){
   const lend=currentLend(gear_id); if(!lend) return;
@@ -2619,7 +2773,8 @@ function openDetail(id){
   const photo=safePhoto?`<div class="detail-photo"><img src="${safePhoto}" alt="${esc(item.name)}" onerror="this.parentElement.innerHTML='${emoji}'"></div>`:`<div class="detail-photo">${emoji}</div>`;
   const lend=currentLend(id);
   const lentBox=lend?`<div class="lent-box"><div class="lent-box-title">Currently Lent Out</div><div>To: <strong>${esc(lend.lent_to||'Unknown')}</strong></div>${lend.date_lent?`<div>Since: ${esc(lend.date_lent)}</div>`:''} ${lend.date_due?`<div>Due back: <strong>${esc(lend.date_due)}</strong></div>`:''}</div>`:'';
-  const fields=[['Brand',item.brand],['Category',item.category],['Type',item.type],['Subtype',item.subtype],['Model',item.model],['Purchased',item.date_purchased],['Price',item.price?'€'+item.price:''],['Weight',item.weight_g?item.weight_g+'g':''],['Size/Color',item.size_color],['Serial/Cert',item.serial_cert],['Status',item.status]].filter(f=>f[1]);
+  const cfEntries=(item.custom_fields||[]).filter(f=>f.label||f.value).map(f=>[f.label||'—',f.value||'—']);
+  const fields=[['Brand',item.brand],['Category',item.category],['Type',item.type],['Subtype',item.subtype],['Model',item.model],['Purchased',item.date_purchased],['Price',item.price?'€'+item.price:''],['Weight',item.weight_g?item.weight_g+'g':''],['Size/Color',item.size_color],['Serial/Cert',item.serial_cert],['Status',item.status],...cfEntries].filter(f=>f[1]);
   const retireMatch=(item.notes||'').match(/^\[Retired:\s*([^\]]+)\]/);
   const retireTag=item.status==='retired'?`<span class="tag tag-retired">Retired${retireMatch?' · '+retireMatch[1]:''}</span>`:'';
   const log=getServiceLog(item);
@@ -3064,7 +3219,7 @@ function removeType(cat,typ){
 
 // ════ UTILS ════
 function closeModal(id){document.getElementById(id).classList.remove('open');}
-['addOverlay','detailOverlay','returnOverlay','lendOverlay','addTripOverlay','tripItemPickerOverlay'].forEach(id=>{document.getElementById(id).addEventListener('click',e=>{if(e.target===e.currentTarget) closeModal(id);});});
+['addOverlay','detailOverlay','returnOverlay','lendOverlay','addTripOverlay','tripItemPickerOverlay','newLendingOverlay'].forEach(id=>{document.getElementById(id).addEventListener('click',e=>{if(e.target===e.currentTarget) closeModal(id);});});
 let toastTimer;
 let _undoFn=null;
 function toast(msg,dur=2500){
@@ -3174,7 +3329,7 @@ function exportJSON(){
   toast('JSON export downloaded');
 }
 function exportCSV(){
-  const cols=['gear_id','name','brand','category','type','subtype','model','date_purchased','date_produced','price','weight_g','size_color','serial_cert','status','notes'];
+  const cols=['gear_id','name','brand','category','type','subtype','model','date_purchased','date_produced','price','weight_g','size_color','serial_cert','status','notes','custom_fields'];
   const esc2=v=>`"${String(v??'').replace(/"/g,'""')}"`;
   const rows=[cols.join(','),...items.map(i=>cols.map(c=>esc2(i[c])).join(','))];
   _download('juodziai-gear-'+new Date().toISOString().slice(0,10)+'.csv',rows.join('\n'),'text/csv');
