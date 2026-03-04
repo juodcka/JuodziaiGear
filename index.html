@@ -142,8 +142,8 @@ textarea.fc{resize:vertical;min-height:70px}
 .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
 .dfl{font-size:10px;color:#444;opacity:1;text-transform:uppercase;letter-spacing:.9px;margin-bottom:0;font-weight:600}
 .dfv{font-size:13px}
-.detail-grid>div{border:1px solid #e0dfd9;border-radius:7px;overflow:hidden;background:var(--surface)}
-.detail-grid>div .dfl{background:#e8e7e1;padding:4px 10px;display:block}
+.detail-grid>div{border:1px solid var(--df-border,#e0dfd9);border-radius:7px;overflow:hidden;background:var(--surface)}
+.detail-grid>div .dfl{background:var(--df-bg,#e8e7e1);padding:4px 10px;display:block}
 .detail-grid>div .dfv{padding:6px 10px;display:block;background:var(--surface)}
 .lent-box{background:var(--warn-light);border:1px solid rgba(224,123,0,.2);border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:13px;line-height:1.7}
 .lent-box-title{color:var(--warn);font-weight:700;font-size:11px;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
@@ -320,6 +320,9 @@ textarea.fc{resize:vertical;min-height:70px}
 .insp-dot-fail{background:#c0392b;box-shadow:0 0 0 2px #f5ceca}
 .insp-last-date{font-size:12px;font-weight:600;color:var(--text);line-height:1.3}
 .insp-last-note{font-size:11px;color:var(--muted);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3}
+.insp-tabs{display:flex;gap:0;border:1px solid var(--border);border-radius:7px;overflow:hidden;flex-shrink:0}
+.insp-tab{padding:6px 14px;font-size:12px;font-weight:600;border:none;background:transparent;cursor:pointer;color:var(--muted);transition:all .12s;font-family:'DM Sans',sans-serif}
+.insp-tab.active{background:var(--accent);color:#fff}
 
 /* ═══════════ MOBILE ═══════════ */
 .mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:150;box-shadow:0 -2px 12px rgba(0,0,0,.08);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -352,7 +355,7 @@ textarea.fc{resize:vertical;min-height:70px}
   #user-name{display:none !important}
   .form-grid{grid-template-columns:1fr}
   .stats{grid-template-columns:repeat(2,1fr)}
-  .detail-grid{grid-template-columns:1fr}
+  .detail-grid{grid-template-columns:1fr 1fr}
   .settings-grid{grid-template-columns:1fr !important}
   .charts-grid{grid-template-columns:1fr}
   .chart-card.full{grid-column:1}
@@ -694,29 +697,55 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
       <div class="page-header">
         <div class="page-title">&#128269; Inspection <small>Gear age &amp; maintenance overview</small></div>
         <div style="display:flex;align-items:center;gap:8px">
+          <div class="insp-tabs">
+            <button class="insp-tab active" id="inspTabSoft" onclick="setInspView('soft')">Soft Goods</button>
+            <button class="insp-tab" id="inspTabHard" onclick="setInspView('hard')">Hard Goods</button>
+          </div>
           <select class="fi" id="inspStatusFilter" onchange="renderInspection()" style="font-size:12px">
             <option value="active">Active gear only</option>
             <option value="all">All gear incl. retired</option>
           </select>
         </div>
       </div>
-      <div class="insp-cards" id="inspCards"></div>
-      <div class="table-wrap">
-        <table class="gtable">
-          <thead><tr>
-            <th style="width:44px"></th>
-            <th>Name</th>
-            <th>Brand</th>
-            <th>Category</th>
-            <th>Type</th>
-            <th>Produced</th>
-            <th>Age</th>
-            <th>Status</th>
-            <th>Last Inspected</th>
-            <th>Actions</th>
-          </tr></thead>
-          <tbody id="inspTbody"></tbody>
-        </table>
+      <!-- Soft Goods view -->
+      <div id="inspViewSoft">
+        <div class="insp-cards" id="inspCards"></div>
+        <div class="table-wrap">
+          <table class="gtable">
+            <thead><tr>
+              <th style="width:44px"></th>
+              <th>Name</th>
+              <th>Brand</th>
+              <th>Category</th>
+              <th>Type</th>
+              <th>Produced</th>
+              <th>Age</th>
+              <th>Status</th>
+              <th>Last Inspected</th>
+              <th>Actions</th>
+            </tr></thead>
+            <tbody id="inspTbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Hard Goods view -->
+      <div id="inspViewHard" style="display:none">
+        <div class="insp-cards" id="inspCardsHard"></div>
+        <div class="table-wrap">
+          <table class="gtable">
+            <thead><tr>
+              <th style="width:44px"></th>
+              <th>Name</th>
+              <th>Brand</th>
+              <th>Category</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Last Inspected</th>
+              <th>Actions</th>
+            </tr></thead>
+            <tbody id="inspTbodyHard"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -2811,6 +2840,7 @@ function openDetail(id){
   const lend=currentLend(id);
   const lentBox=lend?`<div class="lent-box"><div class="lent-box-title">Currently Lent Out</div><div>To: <strong>${esc(lend.lent_to||'Unknown')}</strong></div>${lend.date_lent?`<div>Since: ${esc(lend.date_lent)}</div>`:''} ${lend.date_due?`<div>Due back: <strong>${esc(lend.date_due)}</strong></div>`:''}</div>`:'';
   const cfEntries=(item.custom_fields||[]).filter(f=>f.label||f.value).map(f=>[f.label||'—',f.value||'—']);
+  const DF_COLORS={'Brand':['#dce8f0','#b8d0de'],'Category':['#c8dfc8','#a0c0a0'],'Type':['#daeada','#b8d4b8'],'Subtype':['#eaf4e6','#c8e0c0'],'Purchased':['#ede8d4','#d0c8a4'],'Produced':['#ede8d4','#d0c8a4'],'Status':['#e4ddf0','#c4b8dc']};
   const fields=[['Brand',item.brand],['Category',item.category],['Type',item.type],['Subtype',item.subtype],['Model',item.model],['Purchased',item.date_purchased],['Price',item.price?'€'+item.price:''],['Weight',item.weight_g?item.weight_g+'g':''],['Serial/Cert',item.serial_cert],['Status',item.status],...cfEntries].filter(f=>f[1]);
   const retireMatch=(item.notes||'').match(/^\[Retired:\s*([^\]]+)\]/);
   const retireTag=item.status==='retired'?`<span class="tag tag-retired">Retired${retireMatch?' · '+retireMatch[1]:''}</span>`:'';
@@ -2818,13 +2848,22 @@ function openDetail(id){
   const slogExpanded=curSection==='inspection';
   const logHtml=`<div style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px"><div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none';this.querySelector('.slog-chev').style.transform=this.nextElementSibling.style.display===''?'rotate(180deg)':'rotate(0deg)'"><div style="font-weight:700;font-size:13px">Service Log${log.length?` <span style="font-size:11px;font-weight:400;color:var(--muted)">(${log.length})</span>`:''}</div><svg class="slog-chev" width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="transition:transform .2s;transform:${slogExpanded?'rotate(180deg)':'rotate(0deg)'}"><polyline points="4,7 10,13 16,7"/></svg></div><div style="display:${slogExpanded?'':'none'};margin-top:8px">${log.length?log.map(e=>`<div class="slog-entry"><span class="slog-date">${esc(e.date)}</span><span class="slog-type">${esc(e.type)}</span><div style="margin-top:3px">${esc(e.note)}</div></div>`).join(''):'<div style="color:var(--muted);font-size:13px">No entries yet.</div>'}<div class="slog-add"><input type="date" class="fc" id="slogDate" value="${new Date().toISOString().slice(0,10)}" style="font-size:12px"><select class="fc" id="slogType" style="font-size:12px"><option>Inspection</option><option>Fall/Impact</option><option>Service</option><option>Repair</option><option>Note</option></select><input type="text" class="fc" id="slogNote" placeholder="Entry note…" style="grid-column:1/-1;font-size:12px"><button class="btn btn-primary btn-sm" onclick="addServiceLogEntry('${esc(item.gear_id)}')" style="grid-column:1/-1">Add Entry</button></div></div></div>`;
   const displayNotes=item.notes?item.notes.replace(/^\[Retired:[^\]]*\]\s*/,''):'';
-  document.getElementById('detailContent').innerHTML=`<div class="detail-header">${photo}<div><div class="detail-name">${esc(item.name)}</div><div class="detail-brand">${esc(item.brand)}${item.model?' — '+esc(item.model):''}</div><div class="card-badges"><span class="tag" style="${getCatTagStyle(item.category)}">${item.category}</span>${item.type?`<span class="tag tag-muted">${item.type}</span>`:''}${item.subtype?`<span class="tag tag-muted">${item.subtype}</span>`:''}${item.status==='lent'?'<span class="tag tag-lent">Lent Out</span>':''}${retireTag}</div></div></div>${lentBox}<div class="detail-grid">${fields.map(([l,v])=>`<div><div class="dfl">${l}</div><div class="dfv">${esc(v)}</div></div>`).join('')}</div>${displayNotes?`<div class="dfl" style="margin-bottom:6px">Notes</div><div class="notes-box">${esc(displayNotes)}</div>`:''}${logHtml}`;
+  document.getElementById('detailContent').innerHTML=`<div class="detail-header">${photo}<div><div class="detail-name">${esc(item.name)}</div><div class="detail-brand">${esc(item.brand)}${item.model?' — '+esc(item.model):''}</div><div class="card-badges"><span class="tag" style="${getCatTagStyle(item.category)}">${item.category}</span>${item.type?`<span class="tag tag-muted">${item.type}</span>`:''}${item.subtype?`<span class="tag tag-muted">${item.subtype}</span>`:''}${item.status==='lent'?'<span class="tag tag-lent">Lent Out</span>':''}${retireTag}</div></div></div>${lentBox}<div class="detail-grid">${fields.map(([l,v])=>{const c=DF_COLORS[l];const s=c?`style="--df-bg:${c[0]};--df-border:${c[1]}"`:'';return`<div ${s}><div class="dfl">${l}</div><div class="dfv">${esc(v)}</div></div>`;}).join('')}</div>${displayNotes?`<div class="dfl" style="margin-bottom:6px">Notes</div><div class="notes-box">${esc(displayNotes)}</div>`:''}${logHtml}`;
   document.getElementById('detailActions').innerHTML=`<button class="btn btn-danger" onclick="deleteItem('${item.gear_id}')">${IC.trash} Delete</button>${item.status==='lent'?`<button class="btn btn-warn" onclick="openReturn('${item.gear_id}')">${IC.ret} Mark Returned</button>`:''}${item.status==='active'?`<button class="btn btn-warn" onclick="closeModal('detailOverlay');quickLend('${item.gear_id}')">${IC.lend} Lend</button>`:''}<button class="btn btn-ghost" onclick="closeModal('detailOverlay');duplicateItem('${item.gear_id}')">${IC.copy} Duplicate</button><button class="btn btn-ghost" onclick="closeModal('detailOverlay')">Close</button><button class="btn btn-primary" onclick="openEdit('${item.gear_id}')">${IC.pencil} Edit</button>`;
   document.getElementById('detailOverlay').classList.add('open');
 }
 
 
 // ════ INSPECTION ════
+let inspView='soft'; // 'soft' | 'hard'
+function setInspView(v){
+  inspView=v;
+  document.getElementById('inspTabSoft').classList.toggle('active',v==='soft');
+  document.getElementById('inspTabHard').classList.toggle('active',v==='hard');
+  document.getElementById('inspViewSoft').style.display=v==='soft'?'':'none';
+  document.getElementById('inspViewHard').style.display=v==='hard'?'':'none';
+  renderInspection();
+}
 function getAgeYears(dateProd){
   if(!dateProd) return null;
   const prod=new Date(dateProd);
@@ -2844,11 +2883,41 @@ function ageLabel(years){
   const m=Math.floor((years-y)*12);
   return y>0?`${y}y ${m}m`:`${m}m`;
 }
+function inspActionBtns(i){
+  return `<td><div class="td-actions">
+    ${i.status!=='retired'?`<button class="btn btn-ghost btn-sm icon-btn" onclick="logInspectionNow('${i.gear_id}')" title="Log Inspection — Passed">${IC.shield}</button>`:''}
+    ${i.status!=='retired'?`<button class="btn btn-warn btn-sm icon-btn" onclick="openFailInspection('${i.gear_id}')" title="Failed Inspection — Retire">${IC.warn}</button>`:''}
+    <button class="btn btn-ghost btn-sm icon-btn" onclick="openEdit('${i.gear_id}')" title="Edit">${IC.pencil}</button>
+    <button class="btn btn-danger btn-sm icon-btn" onclick="deleteItem('${i.gear_id}')" title="Delete">${IC.x}</button>
+  </div></td>`;
+}
+function inspInspCell(i){
+  const log=getServiceLog(i);
+  const lastInsp=log.find(e=>e.type==='Inspection');
+  if(!lastInsp) return `<td style="color:var(--muted);font-size:12px">—</td>`;
+  const failed=lastInsp.note&&lastInsp.note.startsWith('FAILED:');
+  const dot=failed
+    ?`<span class="insp-dot insp-dot-fail" title="Last inspection failed"></span>`
+    :`<span class="insp-dot insp-dot-pass" title="Last inspection passed"></span>`;
+  const noteText=failed?lastInsp.note.replace(/^FAILED:\s*/,''):lastInsp.note;
+  return `<td><div class="insp-last">${dot}<div><div class="insp-last-date">${esc(lastInsp.date)}</div><div class="insp-last-note" title="${esc(noteText)}">${esc(noteText)}</div></div></div></td>`;
+}
+function inspPhotoCell(i){
+  const emoji=CAT_EMOJI[i.category]||'🎒';
+  const safePhoto=safeUrl(i.photo_url);
+  return `<td><div class="td-photo">${safePhoto?`<img src="${safePhoto}" onerror="this.parentElement.innerHTML='${emoji}'" alt="">`:emoji}</div></td>`;
+}
+function inspStatusBadge(i){
+  return i.status==='lent'?'<span class="tag tag-lent">Lent</span>':i.status==='retired'?'<span class="tag tag-retired">Retired</span>':'<span class="tag tag-camping">Active</span>';
+}
 function renderInspection(){
   const mode=document.getElementById('inspStatusFilter')?.value||'active';
-  const pool=(mode==='all'?items:items.filter(i=>i.status!=='retired'))
-    .filter(i=>i.date_produced);
-
+  const base=mode==='all'?items:items.filter(i=>i.status!=='retired');
+  if(inspView==='soft') renderInspSoft(base);
+  else renderInspHard(base);
+}
+function renderInspSoft(base){
+  const pool=base.filter(i=>i.date_produced);
   const green=pool.filter(i=>ageClass(getAgeYears(i.date_produced))==='green');
   const amber=pool.filter(i=>ageClass(getAgeYears(i.date_produced))==='amber');
   const red  =pool.filter(i=>ageClass(getAgeYears(i.date_produced))==='red');
@@ -2875,54 +2944,74 @@ function renderInspection(){
       <div class="insp-sub">items with prod. date</div>
     </div>`;
 
-  // Sort: oldest first
-  const sorted=[...pool].sort((a,b)=>{
-    const ya=getAgeYears(a.date_produced)||0;
-    const yb=getAgeYears(b.date_produced)||0;
-    return yb-ya;
-  });
-
+  const sorted=[...pool].sort((a,b)=>(getAgeYears(b.date_produced)||0)-(getAgeYears(a.date_produced)||0));
   if(!sorted.length){
     document.getElementById('inspTbody').innerHTML=`<tr><td colspan="10" style="text-align:center;padding:36px;color:var(--muted)">No items with production date set</td></tr>`;
     return;
   }
-
   document.getElementById('inspTbody').innerHTML=sorted.map(i=>{
     const yrs=getAgeYears(i.date_produced);
     const cls=ageClass(yrs);
-    const emoji=CAT_EMOJI[i.category]||'🎒';
-    const safePhoto=safeUrl(i.photo_url);
-    const photo=`<td><div class="td-photo">${safePhoto?`<img src="${safePhoto}" onerror="this.parentElement.innerHTML='${emoji}'" alt="">`:emoji}</div></td>`;
-    const statusBadge=i.status==='lent'?'<span class="tag tag-lent">Lent</span>':i.status==='retired'?'<span class="tag tag-retired">Retired</span>':'<span class="tag tag-camping">Active</span>';
     const dotColor={'green':'age-dot-green','amber':'age-dot-amber','red':'age-dot-red'}[cls];
-    // Last inspection from service log
-    const log=getServiceLog(i);
-    const lastInsp=log.find(e=>e.type==='Inspection');
-    const failed=lastInsp&&lastInsp.note&&lastInsp.note.startsWith('FAILED:');
-    const inspCell=(()=>{
-      if(!lastInsp) return `<td style="color:var(--muted);font-size:12px">—</td>`;
-      const dot=failed
-        ?`<span class="insp-dot insp-dot-fail" title="Last inspection failed"></span>`
-        :`<span class="insp-dot insp-dot-pass" title="Last inspection passed"></span>`;
-      const noteText=failed?lastInsp.note.replace(/^FAILED:\s*/,''):lastInsp.note;
-      return `<td><div class="insp-last">${dot}<div><div class="insp-last-date">${esc(lastInsp.date)}</div><div class="insp-last-note" title="${esc(noteText)}">${esc(noteText)}</div></div></div></td>`;
-    })();
     return `<tr class="insp-row-${cls}">
-      ${photo}
+      ${inspPhotoCell(i)}
       <td class="td-name" onclick="openDetail('${i.gear_id}')">${esc(i.name)}<small>${esc(i.brand)}${i.model?' · '+esc(i.model):''}</small></td>
       <td>${esc(i.brand)||'—'}</td>
       <td><span class="tag" style="${getCatTagStyle(i.category)}">${i.category}</span></td>
       <td>${i.type||'—'}</td>
       <td>${i.date_produced||'—'}</td>
       <td><span class="age-dot ${dotColor}"></span>${ageLabel(yrs)}</td>
-      <td>${statusBadge}</td>
-      ${inspCell}
-      <td><div class="td-actions">
-        ${i.status!=='retired'?`<button class="btn btn-ghost btn-sm icon-btn" onclick="logInspectionNow('${i.gear_id}')" title="Log Inspection — Passed">${IC.shield}</button>`:''}
-        ${i.status!=='retired'?`<button class="btn btn-warn btn-sm icon-btn" onclick="openFailInspection('${i.gear_id}')" title="Failed Inspection — Retire">${IC.warn}</button>`:''}
-        <button class="btn btn-ghost btn-sm icon-btn" onclick="openEdit('${i.gear_id}')" title="Edit">${IC.pencil}</button>
-        <button class="btn btn-danger btn-sm icon-btn" onclick="deleteItem('${i.gear_id}')" title="Delete">${IC.x}</button>
-      </div></td>
+      <td>${inspStatusBadge(i)}</td>
+      ${inspInspCell(i)}
+      ${inspActionBtns(i)}
+    </tr>`;
+  }).join('');
+}
+function renderInspHard(base){
+  const pool=base.filter(i=>!i.date_produced);
+  const neverInspected=pool.filter(i=>!getServiceLog(i).find(e=>e.type==='Inspection'));
+  const inspected=pool.length-neverInspected.length;
+
+  document.getElementById('inspCardsHard').innerHTML=`
+    <div class="insp-card" style="background:var(--surface);border-color:var(--border)">
+      <div class="insp-label" style="color:var(--muted)">Total Hard Goods</div>
+      <div class="insp-value" style="color:var(--accent)">${pool.length}</div>
+      <div class="insp-sub">no production date</div>
+    </div>
+    <div class="insp-card age-green">
+      <div class="insp-label">Inspected</div>
+      <div class="insp-value">${inspected}</div>
+      <div class="insp-sub">have inspection log</div>
+    </div>
+    <div class="insp-card age-amber">
+      <div class="insp-label">Never Inspected</div>
+      <div class="insp-value">${neverInspected.length}</div>
+      <div class="insp-sub">no log entry yet</div>
+    </div>`;
+
+  if(!pool.length){
+    document.getElementById('inspTbodyHard').innerHTML=`<tr><td colspan="8" style="text-align:center;padding:36px;color:var(--muted)">No hard goods (all items have production dates set)</td></tr>`;
+    return;
+  }
+  // Sort: never inspected first, then by name
+  const sorted=[...pool].sort((a,b)=>{
+    const aInsp=!!getServiceLog(a).find(e=>e.type==='Inspection');
+    const bInsp=!!getServiceLog(b).find(e=>e.type==='Inspection');
+    if(aInsp!==bInsp) return aInsp?1:-1;
+    return (a.name||'').localeCompare(b.name||'');
+  });
+  document.getElementById('inspTbodyHard').innerHTML=sorted.map(i=>{
+    const hasInsp=!!getServiceLog(i).find(e=>e.type==='Inspection');
+    const rowCls=hasInsp?'':'insp-row-amber';
+    return `<tr class="${rowCls}">
+      ${inspPhotoCell(i)}
+      <td class="td-name" onclick="openDetail('${i.gear_id}')">${esc(i.name)}<small>${esc(i.brand)}${i.model?' · '+esc(i.model):''}</small></td>
+      <td>${esc(i.brand)||'—'}</td>
+      <td><span class="tag" style="${getCatTagStyle(i.category)}">${i.category}</span></td>
+      <td>${i.type||'—'}</td>
+      <td>${inspStatusBadge(i)}</td>
+      ${inspInspCell(i)}
+      ${inspActionBtns(i)}
     </tr>`;
   }).join('');
 }
