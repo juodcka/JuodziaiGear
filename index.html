@@ -59,7 +59,8 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 .main::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 .sec-hidden{display:none}
 .page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px}
-.page-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:2px;line-height:1}
+.page-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:2px;line-height:1;display:flex;align-items:center;gap:10px}
+.page-title svg{flex-shrink:0;opacity:.85}
 .page-title small{display:block;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--muted);font-weight:300;letter-spacing:0;margin-top:3px}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:20px}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
@@ -570,7 +571,7 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
     <div class="sidebar-item" onclick="showSec('trips')"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2C7.2 2 5 4.2 5 7c0 4 5 11 5 11s5-7 5-11c0-2.8-2.2-5-5-5z"/><circle cx="10" cy="7" r="1.5"/></svg> Trips <span class="badge" id="b-trips"></span></div>
     <div class="sidebar-item" onclick="showSec('retired')"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h14l-1.5 10H4.5L3 6z"/><path d="M1 6h18"/><path d="M8 6V3h4v3"/></svg> Retired <span class="badge" id="b-retired">0</span></div>
     <div class="sidebar-label">Insights</div>
-    <div class="sidebar-item" onclick="showSec('inspection')"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2l7 3v5c0 4-3 7-7 8C6 17 3 14 3 10V5l7-3z"/><polyline points="7,10 9,12 13,8"/></svg> Inspection</div>
+    <div class="sidebar-item" onclick="showSec('inspection')"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="9" height="13" rx="1.5"/><path d="M7 3V2h3v1"/><line x1="6.5" y1="7" x2="11" y2="7"/><line x1="6.5" y1="10" x2="9.5" y2="10"/><circle cx="14.5" cy="14.5" r="2.5"/><line x1="16.3" y1="16.3" x2="18" y2="18"/></svg> Inspection</div>
     <div class="sidebar-item" onclick="showSec('statistics')"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="3" height="6" rx="0.5"/><rect x="8.5" y="7" width="3" height="10" rx="0.5"/><rect x="14" y="4" width="3" height="13" rx="0.5"/></svg> Statistics</div>
     <div class="sidebar-label">Admin</div>
     <div class="sidebar-item" onclick="showSec('settings')"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="17" y2="6"/><line x1="3" y1="14" x2="17" y2="14"/><circle cx="7" cy="6" r="2"/><circle cx="13" cy="14" r="2"/></svg> Settings</div>
@@ -580,7 +581,7 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
 
     <div id="sec-all">
       <div class="page-header">
-        <div class="page-title">All Gear <small>Complete inventory</small></div>
+        <div class="page-title"><svg width="28" height="28" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="7" height="7" rx="1"/><rect x="11" y="2" width="7" height="7" rx="1"/><rect x="2" y="11" width="7" height="7" rx="1"/><rect x="11" y="11" width="7" height="7" rx="1"/></svg> All Gear <small>Complete inventory</small></div>
         <button class="btn btn-ghost btn-sm" onclick="loadAll()"><span class="spinner" id="spin-all" style="display:none"></span> Refresh</button>
       </div>
       <div class="stats">
@@ -651,7 +652,7 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
 
     <div id="sec-lent" class="sec-hidden">
       <div class="page-header">
-        <div class="page-title">&#129309; Lent Out <small>Currently with others</small></div>
+        <div class="page-title"><svg width="28" height="28" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4h4v4"/><path d="M17 4l-7 7"/><path d="M9 5H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-5"/></svg> Lent Out <small>Currently with others</small></div>
         <button class="btn btn-primary btn-sm fab-action-btn" onclick="openNewLending()">+ New Lending</button>
       </div>
       <div id="lentContent"></div>
@@ -670,7 +671,7 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
     <div id="sec-trips" class="sec-hidden">
       <div id="trips-list-view">
         <div class="page-header">
-          <div class="page-title">&#128506; Trips</div>
+          <div class="page-title"><svg width="28" height="28" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2C7.2 2 5 4.2 5 7c0 4 5 11 5 11s5-7 5-11c0-2.8-2.2-5-5-5z"/><circle cx="10" cy="7" r="1.5"/></svg> Trips</div>
           <button class="btn btn-primary btn-sm fab-action-btn" onclick="openAddTrip()">+ New Trip</button>
         </div>
         <div id="tripsContent"></div>
@@ -686,7 +687,7 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
     </div>
 
     <div id="sec-retired" class="sec-hidden">
-      <div class="page-header"><div class="page-title">&#128230; Retired <small>Decommissioned gear</small></div></div>
+      <div class="page-header"><div class="page-title"><svg width="28" height="28" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h14l-1.5 10H4.5L3 6z"/><path d="M1 6h18"/><path d="M8 6V3h4v3"/></svg> Retired <small>Decommissioned gear</small></div></div>
       <div id="retiredCard" class="gear-grid"></div>
       <div id="retiredTable" style="display:none"><div class="table-wrap"><table class="gtable"><thead><tr><th style="width:44px"></th><th>Name</th><th>Brand</th><th>Category</th><th>Type</th><th>Reason</th><th>Purchased</th><th>Produced</th><th>Actions</th></tr></thead><tbody id="retiredTbody"></tbody></table></div></div>
     </div>
@@ -695,7 +696,7 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
     <!-- INSPECTION -->
     <div id="sec-inspection" class="sec-hidden">
       <div class="page-header">
-        <div class="page-title">&#128269; Inspection <small>Gear age &amp; maintenance overview</small></div>
+        <div class="page-title"><svg width="28" height="28" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="9" height="13" rx="1.5"/><path d="M7 3V2h3v1"/><line x1="6.5" y1="7" x2="11" y2="7"/><line x1="6.5" y1="10" x2="9.5" y2="10"/><circle cx="14.5" cy="14.5" r="2.5"/><line x1="16.3" y1="16.3" x2="18" y2="18"/></svg> Inspection <small>Gear age &amp; maintenance overview</small></div>
         <div style="display:flex;align-items:center;gap:8px">
           <div class="insp-tabs">
             <button class="insp-tab active" id="inspTabSoft" onclick="setInspView('soft')">Soft Goods</button>
@@ -752,7 +753,7 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
     <!-- STATISTICS -->
     <div id="sec-statistics" class="sec-hidden">
       <div class="page-header">
-        <div class="page-title">Statistics <small>Gear inventory insights</small></div>
+        <div class="page-title"><svg width="28" height="28" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="3" height="6" rx="0.5"/><rect x="8.5" y="7" width="3" height="10" rx="0.5"/><rect x="14" y="4" width="3" height="13" rx="0.5"/></svg> Statistics <small>Gear inventory insights</small></div>
         <select class="fi" id="statStatusFilter" onchange="renderStatistics()" style="font-size:12px">
           <option value="active">Active gear only</option>
           <option value="all">All gear incl. retired</option>
@@ -834,7 +835,7 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
 
     <!-- SETTINGS -->
     <div id="sec-settings" class="sec-hidden">
-      <div class="page-header"><div class="page-title">Settings <small>Manage brands, categories, types</small></div></div>
+      <div class="page-header"><div class="page-title"><svg width="28" height="28" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="17" y2="6"/><line x1="3" y1="14" x2="17" y2="14"/><circle cx="7" cy="6" r="2"/><circle cx="13" cy="14" r="2"/></svg> Settings <small>Manage brands, categories, types</small></div></div>
       <div class="settings-card" style="margin-bottom:20px">
         <h3><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="10" cy="5" rx="7" ry="2.5"/><path d="M3 5v4c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V5"/><path d="M3 9v4c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V9"/></svg> App Database</h3>
         <div style="font-size:13px;color:var(--muted);margin-bottom:10px">Project: <strong>juodziaigear</strong></div>
@@ -1108,6 +1109,7 @@ const IC={
   folder:  `<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5a1 1 0 0 1 1-1h4l2 2h6a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5z"/></svg>`,
   tag:     `<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h6l8 8-6 6-8-8V3z"/><circle cx="7" cy="7" r="1" fill="currentColor"/></svg>`,
   doc:     `<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 2h7l4 4v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><polyline points="12,2 12,6 16,6"/></svg>`,
+  insp:    `<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="9" height="13" rx="1.5"/><path d="M7 3V2h3v1"/><line x1="6.5" y1="7" x2="11" y2="7"/><line x1="6.5" y1="10" x2="9.5" y2="10"/><circle cx="14.5" cy="14.5" r="2.5"/><line x1="16.3" y1="16.3" x2="18" y2="18"/></svg>`,
 };
 // ════ STATE ════
 let items=[], lends=[], lookups={brands:[],hierarchy:{}}, trips=[];
@@ -3475,7 +3477,7 @@ function exportCSV(){
     <button class="mnav-item active" data-sec="all" onclick="showSec('all')" title="All Gear"><svg width="28" height="28" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="7" height="7" rx="1"/><rect x="11" y="2" width="7" height="7" rx="1"/><rect x="2" y="11" width="7" height="7" rx="1"/><rect x="11" y="11" width="7" height="7" rx="1"/></svg></button>
     <button class="mnav-item" data-sec="lent" onclick="showSec('lent')" title="Lent Out"><svg width="28" height="28" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4h4v4"/><path d="M17 4l-7 7"/><path d="M9 5H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-5"/></svg><span class="mnav-badge" id="mb-lent" style="display:none"></span></button>
     <button class="mnav-item" data-sec="trips" onclick="showSec('trips')" title="Trips"><svg width="28" height="28" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2C7.2 2 5 4.2 5 7c0 4 5 11 5 11s5-7 5-11c0-2.8-2.2-5-5-5z"/><circle cx="10" cy="7" r="1.5"/></svg><span class="mnav-badge" id="mb-trips" style="display:none"></span></button>
-    <button class="mnav-item" data-sec="inspection" onclick="showSec('inspection')" title="Inspection"><svg width="28" height="28" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2l7 3v5c0 4-3 7-7 8C6 17 3 14 3 10V5l7-3z"/><polyline points="7,10 9,12 13,8"/></svg></button>
+    <button class="mnav-item" data-sec="inspection" onclick="showSec('inspection')" title="Inspection"><svg width="28" height="28" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="9" height="13" rx="1.5"/><path d="M7 3V2h3v1"/><line x1="6.5" y1="7" x2="11" y2="7"/><line x1="6.5" y1="10" x2="9.5" y2="10"/><circle cx="14.5" cy="14.5" r="2.5"/><line x1="16.3" y1="16.3" x2="18" y2="18"/></svg></button>
     <button class="mnav-item" data-sec="statistics" onclick="showSec('statistics')" title="Statistics"><svg width="28" height="28" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="3" height="6" rx="0.5"/><rect x="8.5" y="7" width="3" height="10" rx="0.5"/><rect x="14" y="4" width="3" height="13" rx="0.5"/></svg></button>
     <button class="mnav-item" data-sec="settings" onclick="showSec('settings')" title="Settings"><svg width="28" height="28" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="17" y2="6"/><line x1="3" y1="14" x2="17" y2="14"/><circle cx="7" cy="6" r="2"/><circle cx="13" cy="14" r="2"/></svg></button>
   </div>
