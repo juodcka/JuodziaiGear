@@ -2780,6 +2780,7 @@ async function logInspectionNow(gearId){
   item.service_log=JSON.stringify(log);
   try{if(getApiUrl()) await api('updateGear',{gear_id:gearId,service_log:item.service_log});}catch(e){toast('API: '+e.message);}
   saveLocal();
+  renderInspection();
   toast('Inspection logged for '+esc(item.name));
 }
 function openFailInspection(gearId){
@@ -2828,6 +2829,7 @@ async function addServiceLogEntry(gearId){
   try{if(getApiUrl()) await api('updateGear',{gear_id:gearId,service_log:item.service_log});}catch(e){toast('API: '+e.message);}
   saveLocal();
   openDetail(gearId);
+  if(curSection==='inspection') renderInspection();
   toast('Log entry added');
 }
 
