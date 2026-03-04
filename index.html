@@ -2778,10 +2778,10 @@ async function logInspectionNow(gearId){
   const log=getServiceLog(item);
   log.unshift({date:new Date().toISOString().slice(0,10),type:'Inspection',note:'Inspected OK'});
   item.service_log=JSON.stringify(log);
-  try{if(getApiUrl()) await api('updateGear',{gear_id:gearId,service_log:item.service_log});}catch(e){toast('API: '+e.message);}
   saveLocal();
   renderInspection();
   toast('Inspection logged for '+esc(item.name));
+  try{if(getApiUrl()) await api('updateGear',{gear_id:gearId,service_log:item.service_log});}catch(e){toast('API: '+e.message);}
 }
 function openFailInspection(gearId){
   const item=items.find(i=>i.gear_id===gearId); if(!item) return;
@@ -2809,13 +2809,13 @@ async function confirmFailInspection(){
   const cleanNotes=(item.notes||'').replace(/^\[Retired:[^\]]*\]\s*/,'');
   item.notes='[Retired: '+reasonLabel+'] '+cleanNotes;
   closeModal('failInspOverlay');
-  try{
-    if(getApiUrl()) await api('updateGear',{gear_id:gearId,status:item.status,notes:item.notes,service_log:item.service_log});
-  }catch(e){toast('API: '+e.message);}
   saveLocal();
   renderInspection();
   renderAll();
   toast(esc(item.name)+' retired after failed inspection');
+  try{
+    if(getApiUrl()) await api('updateGear',{gear_id:gearId,status:item.status,notes:item.notes,service_log:item.service_log});
+  }catch(e){toast('API: '+e.message);}
 }
 async function addServiceLogEntry(gearId){
   const item=items.find(i=>i.gear_id===gearId); if(!item) return;
