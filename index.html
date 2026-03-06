@@ -2858,14 +2858,12 @@ function renderTagsSelect(selectedTags){
   const tags=lookups.tags||[];
   if(!tags.length){container.innerHTML='<span style="font-size:12px;color:var(--muted)">No tags defined. Add tags in Settings.</span>';return;}
   container.innerHTML=tags.map(t=>{
-    const checked=(selectedTags||[]).includes(t);
-    return`<label class="tag-pill${checked?' selected':''}">
-      <input type="checkbox" style="display:none" value="${esc(t)}"${checked?' checked':''} onchange="this.closest('.tag-pill').classList.toggle('selected',this.checked)">${esc(t)}
-    </label>`;
+    const sel=(selectedTags||[]).includes(t);
+    return`<div class="tag-pill${sel?' selected':''}" onclick="this.classList.toggle('selected')" data-tag="${esc(t)}">${esc(t)}</div>`;
   }).join('');
 }
 function getSelectedTags(){
-  return [...document.querySelectorAll('#fTagsContainer input[type="checkbox"]:checked')].map(i=>i.value);
+  return [...document.querySelectorAll('#fTagsContainer .tag-pill.selected')].map(el=>el.dataset.tag);
 }
 
 // ════ RETURN ════
