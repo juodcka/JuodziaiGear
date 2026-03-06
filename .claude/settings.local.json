@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell.exe -ExecutionPolicy Bypass -File \"c:/Users/marty/Documents/Git/JuodziaiGear/search.ps1\")",
+      "Bash(grep -rh \"^function \\\\|^async function \\\\|^const \\\\|^let \\\\|^var \" *.js)",
+      "Bash(grep -v \"//\")",
+      "Bash(for f in *.js)",
+      "Bash(do tail -3 \"$f\")",
+      "Bash(echo \" <-- $f\")",
+      "Bash(done)",
+      "Bash(grep -rn \"function renderAll\\\\|function updateBadges\\\\|function renderLent\\\\b\\\\|function renderLookupUI\\\\|function connectAndLoad\\\\|function migrateHierarchy\\\\|function populateBorrowerList\\\\|function isItemLentDuring\\\\|function isItemInTripDuring\\\\|function getApiUrl\\\\|function applySorted\\\\|function getCatTagStyle\\\\|function getCatColor\" *.js)",
+      "Bash(grep -rh \"function \" *.js)",
+      "Bash(for fn in confirmReturn connectAndLoad deleteItem duplicateItem getSelectedTags loadLocal openAddModal openDetail openEdit openNewLending openReturn quickLend renderAll renderInspection renderLookupUI renderStatistics renderTagsSelect renderTrips saveItem saveLocal updateBadges)",
+      "Bash(do grep -l \"function $fn\\\\b\" c:/Users/marty/Documents/Git/JuodziaiGear/js/*.js)",
+      "Bash(xargs -I{} basename {})",
+      "Bash(echo \"MISSING: $fn\")"
+    ]
+  }
+}
