@@ -1171,28 +1171,33 @@ const PALETTE=['#3a7d44','#1a6b8a','#5a3ab5','#e07b00','#d63031','#2aa0c8','#5cb
 let CATS=[]; // dynamically updated from lookups.hierarchy
 const SECTIONS=['all','lent','trips','retired','inspection','statistics','settings'];
 
+// ════ HIERARCHY DEFINITION ════
+const NEW_HIERARCHY={
+  "Camping":{"Shelters":["Tents","Tarps","Bivys"],"Sleeping Systems":["Sleeping Bags","Sleeping Pads"],"Camp Kitchen":["Stoves","Cookware","Water Filters","Dinnerware"]},
+  "Mountaineering & Climbing":{"Harnesses":["Sport Climbing Harnesses","Mountaineering Harnesses","Trad Climbing Harnesses"],"Ropes":["Single Ropes","Double Ropes","Twin Ropes","Accessory Cords"],"Carabiners":["Non-Locking","Screw-Lock","Twist-Lock","Triple-Lock"],"Quickdraws":["Sport Quickdraws","Alpine Quickdraws","Trad Quickdraws"],"Slings":["Sewn Slings","Daisy Chains","PAS","Via Ferrata Lanyards"],"Protection":["Cams","Nuts","Hexes","Tricams","Ice Screws"],"Belay & Descend":["Tube Style / Plaquette","Assisted-Braking"],"Ascenders":["Handled Ascenders","Micro Ascenders"],"Pulleys":["Compact Pulleys","High-Efficiency Pulleys","Pulley-Carabiners","Progress-Capture Pulleys"],"Ice Axes":["Walking Ice Axes","Technical Ice Axes"],"Ice Axe Accessories":["Ice Axe Leashes","Abalakov Hooks","Caritools"],"Crampons":["Walking Crampons","Technical Crampons"]},
+  "Skiing & Snowboarding":{"Skis":["XC Skis","Ski-Touring Skis"],"Snowboards":[],"Bindings":["Ski Bindings","Snowboard Bindings"]},
+  "Helmets":{"Climbing Helmets":[],"Ski Helmets":[]},
+  "Footwear":{"Mountaineering Boots":[],"Climbing Shoes":[],"Snowboard Softboots":[],"Snowboard Hardboots":[],"XC Boots":[]},
+  "Carry":{"Backpacks":["Climbing Packs","Ski Touring Packs","Hiking Packs","Summit Packs"],"Dry Bags":[]},
+  "Lighting":{"Headlamps":[],"Lanterns":[]},
+  "Apparel":{"Gloves":[]},
+  "EDC":{"Knives":[],"Multitools":[]},
+  "Electronics":{"GPS":[],"Watches":[],"Power Banks":[],"Satellite Communicators":[]}
+};
+
 // ════ LOCAL STORAGE ════
 function loadLocal(){
   items=JSON.parse(localStorage.getItem('sg_items')||'[]');
   lends=JSON.parse(localStorage.getItem('sg_lends')||'[]');
   trips=JSON.parse(localStorage.getItem('sg_trips')||'[]');
-  lookups=JSON.parse(localStorage.getItem('sg_lookups')||JSON.stringify({
-    brands:["Black Diamond","Petzl","MSR","Osprey","Salomon","Arc'teryx","Mammut","La Sportiva","Scarpa","Camp"],
-    tags:["mountaineering","rock-climbing","ski-touring","snowboarding","cross-country","camping","hiking","via-ferrata"],
-    hierarchy:{
-      "Camping":{"Shelters":["Tents","Tarps","Bivys"],"Sleeping Systems":["Sleeping Bags","Sleeping Pads"],"Camp Kitchen":["Stoves","Cookware","Water Filters","Dinnerware"]},
-      "Mountaineering & Climbing":{"Harnesses":["Sport Climbing Harnesses","Mountaineering Harnesses","Trad Climbing Harnesses"],"Ropes":["Single Ropes","Double Ropes","Twin Ropes","Accessory Cords"],"Carabiners":["Non-Locking","Screw-Lock","Twist-Lock","Triple-Lock"],"Quickdraws":["Sport Quickdraws","Alpine Quickdraws","Trad Quickdraws"],"Slings":["Sewn Slings","Daisy Chains","PAS","Via Ferrata Lanyards"],"Protection":["Cams","Nuts","Hexes","Tricams","Ice Screws"],"Belay & Descend":["Tube Style / Plaquette","Assisted-Braking"],"Ascenders":["Handled Ascenders","Micro Ascenders"],"Pulleys":["Compact Pulleys","High-Efficiency Pulleys","Pulley-Carabiners","Progress-Capture Pulleys"],"Ice Axes":["Walking Ice Axes","Technical Ice Axes"],"Ice Axe Accessories":["Ice Axe Leashes","Abalakov Hooks","Caritools"],"Crampons":["Walking Crampons","Technical Crampons"]},
-      "Skiing & Snowboarding":{"Skis":["XC Skis","Ski-Touring Skis"],"Snowboards":[],"Bindings":["Ski Bindings","Snowboard Bindings"]},
-      "Helmets":{"Climbing Helmets":[],"Ski Helmets":[]},
-      "Footwear":{"Mountaineering Boots":[],"Climbing Shoes":[],"Snowboard Softboots":[],"Snowboard Hardboots":[],"XC Boots":[]},
-      "Carry":{"Backpacks":["Climbing Packs","Ski Touring Packs","Hiking Packs","Summit Packs"],"Dry Bags":[]},
-      "Lighting":{"Headlamps":[],"Lanterns":[]},
-      "Apparel":{"Gloves":[]},
-      "EDC":{"Knives":[],"Multitools":[]},
-      "Electronics":{"GPS":[],"Watches":[],"Power Banks":[],"Satellite Communicators":[]}
-    }
-  }));
+  const _defaultLookups=localStorage.getItem('sg_lookups');
+  lookups=_defaultLookups?JSON.parse(_defaultLookups):{brands:["Black Diamond","Petzl","MSR","Osprey","Salomon","Arc'teryx","Mammut","La Sportiva","Scarpa","Camp"],tags:["mountaineering","rock-climbing","ski-touring","snowboarding","cross-country","camping","hiking","via-ferrata"],hierarchy:JSON.parse(JSON.stringify(NEW_HIERARCHY))};
   if(!lookups.tags) lookups.tags=["mountaineering","rock-climbing","ski-touring","snowboarding","cross-country","camping","hiking","via-ferrata"];
+  // Replace old hierarchy in-place so the UI gets new categories immediately
+  if(Object.keys(lookups.hierarchy||{}).some(k=>['Mountaineering','Skiing'].includes(k))){
+    lookups.hierarchy=JSON.parse(JSON.stringify(NEW_HIERARCHY));
+    localStorage.setItem('sg_lookups',JSON.stringify(lookups));
+  }
   if(!items.length){
     items=[
       {gear_id:'GEAR-001',name:'Black Diamond Half Dome',brand:'Black Diamond',category:'Helmets',type:'Climbing Helmets',subtype:'',model:'Half Dome',date_purchased:'2022-04-10',price:89,weight_g:395,size_color:'M/L',serial_cert:'CE EN12492',status:'active',photo_url:'',notes:'Minor scuff right side.',tags:['rock-climbing','mountaineering']},
@@ -1350,6 +1355,8 @@ async function firestoreApi(action,body){
       if(d[body.category]?.[body.type]) d[body.category][body.type]=d[body.category][body.type].filter(s=>s!==body.subtype);
       await meta('hierarchy').set(d); return{removed:body};
     }
+    case 'replaceHierarchy':
+      await meta('hierarchy').set(body.hierarchy); return{replaced:true};
     default: throw new Error('Unknown action: '+action);
   }
 }
@@ -1359,9 +1366,7 @@ function normalizeItem(i){
   return i;
 }
 function migrateHierarchy(){
-  // Map old category/type values to new hierarchy; items with unrecognised values are left untouched
   const CAT_MAP={'Mountaineering':'Mountaineering & Climbing','Skiing':'Skiing & Snowboarding'};
-  // type migrations: keyed by [oldCategory, oldType] → {category, type}
   const TYPE_MAP={
     'Mountaineering|Belay':{category:'Mountaineering & Climbing',type:'Belay & Descend'},
     'Mountaineering|Footwear':{category:'Footwear',type:''},
@@ -1378,27 +1383,27 @@ function migrateHierarchy(){
     'Skiing|Apparel':{category:'Apparel',type:''},
     'Skiing|Carry':{category:'Carry',type:'Backpacks'},
   };
-  let changed=false;
+  // Detect if lookups.hierarchy still has old structure
+  const hasOldCats=Object.keys(lookups.hierarchy||{}).some(k=>['Mountaineering','Skiing'].includes(k));
+  if(hasOldCats){
+    lookups.hierarchy=JSON.parse(JSON.stringify(NEW_HIERARCHY));
+    if(getApiUrl()) api('replaceHierarchy',{hierarchy:lookups.hierarchy}).catch(()=>{});
+  }
+  let itemsChanged=false;
   items.forEach(item=>{
     const typeKey=(item.category||'')+'|'+(item.type||'');
     if(TYPE_MAP[typeKey]){
       const m=TYPE_MAP[typeKey];
-      item.category=m.category;
-      item.type=m.type;
-      item.subtype='';
-      changed=true;
+      item.category=m.category; item.type=m.type; item.subtype=''; itemsChanged=true;
     } else if(CAT_MAP[item.category]){
-      item.category=CAT_MAP[item.category];
-      changed=true;
+      item.category=CAT_MAP[item.category]; itemsChanged=true;
     }
     if(!item.tags) item.tags=[];
   });
-  if(changed){
+  if(hasOldCats||itemsChanged){
     saveLocal();
-    // Push migrated items to Firebase in background
-    if(getApiUrl()){
-      const migrated=items.filter(i=>['Mountaineering & Climbing','Skiing & Snowboarding','Camping','Footwear','Electronics','Carry','Apparel','Lighting'].includes(i.category));
-      migrated.forEach(item=>api('updateGear',{gear_id:item.gear_id,category:item.category,type:item.type,subtype:item.subtype,tags:item.tags}).catch(()=>{}));
+    if(getApiUrl()&&itemsChanged){
+      items.forEach(item=>api('updateGear',{gear_id:item.gear_id,category:item.category,type:item.type,subtype:item.subtype,tags:item.tags}).catch(()=>{}));
     }
   }
 }
