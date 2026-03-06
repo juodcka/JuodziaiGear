@@ -1,6 +1,6 @@
 // JuodziaiGear Service Worker
 // IMPORTANT: Bump CACHE version on every deploy (jg-v1 → jg-v2, etc.)
-const CACHE = 'jg-v26';
+const CACHE = 'jg-v27';
 
 // Use self.location to build paths relative to the SW's own location.
 // This works correctly on both custom domains and GitHub Pages subdirectories.
@@ -10,24 +10,6 @@ const SHELL = [
   BASE,
   BASE + 'index.html',
   BASE + 'manifest.json',
-  BASE + 'css/main.css',
-  BASE + 'js/icons.js',
-  BASE + 'js/state.js',
-  BASE + 'js/utils.js',
-  BASE + 'js/storage.js',
-  BASE + 'js/firebase.js',
-  BASE + 'js/auth.js',
-  BASE + 'js/ui.js',
-  BASE + 'js/data.js',
-  BASE + 'js/render.js',
-  BASE + 'js/gear.js',
-  BASE + 'js/trips.js',
-  BASE + 'js/lending.js',
-  BASE + 'js/inspection.js',
-  BASE + 'js/statistics.js',
-  BASE + 'js/settings.js',
-  BASE + 'js/detail.js',
-  BASE + 'js/init.js',
   'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js',
   'https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js',
