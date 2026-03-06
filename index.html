@@ -93,6 +93,10 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 .tag-lent{background:var(--warn-light);color:var(--warn)}
 .tag-retired{background:var(--surface2);color:var(--muted)}
 .tag-muted{background:var(--surface2);color:var(--muted)}
+.tag-user-tag{background:#fff3e0;color:#c45c00;border:1px solid #f4c070}
+.tags-multiselect{display:flex;flex-wrap:wrap;gap:6px;padding:4px 0}
+.tag-pill{display:inline-flex;align-items:center;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;background:var(--surface2);color:var(--muted);border:1px solid var(--border);transition:background .12s,color .12s,border-color .12s;user-select:none}
+.tag-pill.selected{background:#fff3e0;color:#c45c00;border-color:#f4c070}
 .card-name{font-weight:600;font-size:15px;margin-bottom:1px}
 .card-brand{color:var(--muted);font-size:12px;margin-bottom:9px}
 .card-meta{display:flex;flex-direction:column;gap:2px}
@@ -621,6 +625,9 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
         <select class="fi" id="fProdYear" onchange="renderAll()">
           <option value="">All Prod. Years</option>
         </select>
+        <select class="fi" id="filterTag" onchange="renderAll()">
+          <option value="">All Tags</option>
+        </select>
         <select class="fi" id="fSt" onchange="renderAll()">
           <option value="">Active Only</option>
           <option value="all">All Status</option>
@@ -640,6 +647,7 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
           <th onclick="sortBy('category')" id="th-category">Category <span class="sort-arrow" id="sa-category"></span></th>
           <th onclick="sortBy('type')" id="th-type">Type <span class="sort-arrow" id="sa-type"></span></th>
           <th onclick="sortBy('subtype')" id="th-subtype">Subtype <span class="sort-arrow" id="sa-subtype"></span></th>
+          <th id="th-tags">Tags</th>
           <th onclick="sortBy('weight_g')" id="th-weight_g">Weight <span class="sort-arrow" id="sa-weight_g"></span></th>
           <th onclick="sortBy('date_purchased')" id="th-date_purchased">Purchased <span class="sort-arrow" id="sa-date_purchased"></span></th>
           <th onclick="sortBy('date_produced')" id="th-date_produced">Produced <span class="sort-arrow" id="sa-date_produced"></span></th>
@@ -871,6 +879,14 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
             <button class="btn btn-primary btn-sm" onclick="addBrand()">Add</button>
           </div>
         </div>
+        <div class="settings-card">
+          <h3><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="16" height="12" rx="2"/><path d="M6 5V3h8v2"/></svg> Tags</h3>
+          <div id="tagList" style="max-height:300px;overflow-y:auto"></div>
+          <div class="add-row">
+            <input type="text" class="fc" id="newTag" placeholder="Add tag&hellip;" onkeydown="if(event.key==='Enter') addTag()">
+            <button class="btn btn-primary btn-sm" onclick="addTag()">Add</button>
+          </div>
+        </div>
         <div class="settings-card" style="grid-column:1/-1">
           <h3>&#128193; Category &rarr; Type &rarr; Subtype Hierarchy</h3>
           <div id="hierTree" class="hier-tree"></div>
@@ -922,6 +938,10 @@ tr.pack-checked td:first-child{text-decoration:none;opacity:1}
         <div style="font-size:11px;color:var(--muted);margin-top:4px">Upload to Google Drive &rarr; Share &rarr; Copy link</div>
       </div>
       <div class="fg full"><label class="fl">Notes</label><textarea class="fc" id="fNotes" placeholder="Condition, usage history, inspection dates&hellip;"></textarea></div>
+      <div class="fg full">
+        <label class="fl">Tags</label>
+        <div id="fTagsContainer" class="tags-multiselect"></div>
+      </div>
       <div class="fg full">
         <label class="fl">Custom Fields</label>
         <div id="fCustomFields"></div>
@@ -1120,11 +1140,18 @@ let _dupGearIds=null;
 const _charts={};
 let countMode='stacked', catMode='category', spendMode='stacked', spendCatMode='category';
 
-const CAT_EMOJI={Mountaineering:'⛰',Camping:'⛺',Skiing:'🎿'};
+const CAT_EMOJI={};
 const CAT_COLORS={
-  Mountaineering:{bg:'rgba(26,107,138,0.75)',border:'#1a6b8a',tagBg:'#ddf0f7',tagColor:'#1a6b8a'},
-  Camping:{bg:'rgba(61,122,46,0.8)',border:'#3d7a2e',tagBg:'#e4f2df',tagColor:'#3d7a2e'},
-  Skiing:{bg:'rgba(90,58,181,0.75)',border:'#5a3ab5',tagBg:'#ede8fb',tagColor:'#5a3ab5'},
+  'Camping':{bg:'rgba(61,122,46,0.8)',border:'#3d7a2e',tagBg:'#e4f2df',tagColor:'#3d7a2e'},
+  'Mountaineering & Climbing':{bg:'rgba(26,107,138,0.75)',border:'#1a6b8a',tagBg:'#ddf0f7',tagColor:'#1a6b8a'},
+  'Skiing & Snowboarding':{bg:'rgba(90,58,181,0.75)',border:'#5a3ab5',tagBg:'#ede8fb',tagColor:'#5a3ab5'},
+  'Helmets':{bg:'rgba(180,80,40,0.75)',border:'#b45028',tagBg:'#f7e4dc',tagColor:'#b45028'},
+  'Footwear':{bg:'rgba(140,100,40,0.75)',border:'#8c6428',tagBg:'#f2ecdf',tagColor:'#8c6428'},
+  'Carry':{bg:'rgba(40,120,80,0.75)',border:'#287850',tagBg:'#dcf0e7',tagColor:'#287850'},
+  'Lighting':{bg:'rgba(180,140,0,0.75)',border:'#b48c00',tagBg:'#f5edcc',tagColor:'#8c6a00'},
+  'Apparel':{bg:'rgba(80,60,160,0.75)',border:'#503ca0',tagBg:'#e5e0f7',tagColor:'#503ca0'},
+  'EDC':{bg:'rgba(120,60,60,0.75)',border:'#783c3c',tagBg:'#f2e0e0',tagColor:'#783c3c'},
+  'Electronics':{bg:'rgba(30,100,160,0.75)',border:'#1e64a0',tagBg:'#d8eaf7',tagColor:'#1e64a0'},
 };
 // Fallback colors for user-added categories
 const EXTRA_COLORS=[
@@ -1141,7 +1168,7 @@ function getCatColor(cat){
 }
 function getCatTagStyle(cat){const c=getCatColor(cat);return `background:${c.tagBg};color:${c.tagColor}`;}
 const PALETTE=['#3a7d44','#1a6b8a','#5a3ab5','#e07b00','#d63031','#2aa0c8','#5cb85c','#8a6be0','#f5a623','#ff6b6b'];
-let CATS=['Mountaineering','Camping','Skiing']; // dynamically updated from lookups.hierarchy
+let CATS=[]; // dynamically updated from lookups.hierarchy
 const SECTIONS=['all','lent','trips','retired','inspection','statistics','settings'];
 
 // ════ LOCAL STORAGE ════
@@ -1151,24 +1178,33 @@ function loadLocal(){
   trips=JSON.parse(localStorage.getItem('sg_trips')||'[]');
   lookups=JSON.parse(localStorage.getItem('sg_lookups')||JSON.stringify({
     brands:["Black Diamond","Petzl","MSR","Osprey","Salomon","Arc'teryx","Mammut","La Sportiva","Scarpa","Camp"],
+    tags:["mountaineering","rock-climbing","ski-touring","snowboarding","cross-country","camping","hiking","via-ferrata"],
     hierarchy:{
-      Mountaineering:{Protection:["Helmet","Harness","Crampons","Ice Axe"],Belay:["Belay Device","Carabiner","Rope","Sling"],Footwear:["Mountaineering Boot","Approach Shoe"],Carry:["Pack / Rucksack"],Apparel:["Shell Jacket","Base Layer","Insulation Layer"],Navigation:["GPS","Altimeter"]},
-      Camping:{Shelter:["Tent","Bivy","Tarp"],Sleep:["Sleeping Bag","Sleeping Pad"],Cooking:["Stove","Cookset","Water Filter"],Carry:["Backpack","Dry Bag"],Lighting:["Headlamp","Lantern"]},
-      Skiing:{Footwear:["Boot","Ski","Binding","Snowboard"],Safety:["Helmet","Avalanche Beacon","Probe","Shovel","Airbag Pack"],Apparel:["Ski Jacket","Ski Pants","Gloves","Goggles"],Carry:["Ski Pack","Boot Bag"]}
+      "Camping":{"Shelters":["Tents","Tarps","Bivys"],"Sleeping Systems":["Sleeping Bags","Sleeping Pads"],"Camp Kitchen":["Stoves","Cookware","Water Filters","Dinnerware"]},
+      "Mountaineering & Climbing":{"Harnesses":["Sport Climbing Harnesses","Mountaineering Harnesses","Trad Climbing Harnesses"],"Ropes":["Single Ropes","Double Ropes","Twin Ropes","Accessory Cords"],"Carabiners":["Non-Locking","Screw-Lock","Twist-Lock","Triple-Lock"],"Quickdraws":["Sport Quickdraws","Alpine Quickdraws","Trad Quickdraws"],"Slings":["Sewn Slings","Daisy Chains","PAS","Via Ferrata Lanyards"],"Protection":["Cams","Nuts","Hexes","Tricams","Ice Screws"],"Belay & Descend":["Tube Style / Plaquette","Assisted-Braking"],"Ascenders":["Handled Ascenders","Micro Ascenders"],"Pulleys":["Compact Pulleys","High-Efficiency Pulleys","Pulley-Carabiners","Progress-Capture Pulleys"],"Ice Axes":["Walking Ice Axes","Technical Ice Axes"],"Ice Axe Accessories":["Ice Axe Leashes","Abalakov Hooks","Caritools"],"Crampons":["Walking Crampons","Technical Crampons"]},
+      "Skiing & Snowboarding":{"Skis":["XC Skis","Ski-Touring Skis"],"Snowboards":[],"Bindings":["Ski Bindings","Snowboard Bindings"]},
+      "Helmets":{"Climbing Helmets":[],"Ski Helmets":[]},
+      "Footwear":{"Mountaineering Boots":[],"Climbing Shoes":[],"Snowboard Softboots":[],"Snowboard Hardboots":[],"XC Boots":[]},
+      "Carry":{"Backpacks":["Climbing Packs","Ski Touring Packs","Hiking Packs","Summit Packs"],"Dry Bags":[]},
+      "Lighting":{"Headlamps":[],"Lanterns":[]},
+      "Apparel":{"Gloves":[]},
+      "EDC":{"Knives":[],"Multitools":[]},
+      "Electronics":{"GPS":[],"Watches":[],"Power Banks":[],"Satellite Communicators":[]}
     }
   }));
+  if(!lookups.tags) lookups.tags=["mountaineering","rock-climbing","ski-touring","snowboarding","cross-country","camping","hiking","via-ferrata"];
   if(!items.length){
     items=[
-      {gear_id:'GEAR-001',name:'Black Diamond Half Dome',brand:'Black Diamond',category:'Mountaineering',type:'Protection',subtype:'Helmet',model:'Half Dome',date_purchased:'2022-04-10',price:89,weight_g:395,size_color:'M/L',serial_cert:'CE EN12492',status:'active',photo_url:'',notes:'Minor scuff right side.'},
-      {gear_id:'GEAR-002',name:'MSR Hubba Hubba NX2',brand:'MSR',category:'Camping',type:'Shelter',subtype:'Tent',model:'Hubba Hubba NX',date_purchased:'2021-06-15',price:450,weight_g:1720,size_color:'2P',serial_cert:'',status:'active',photo_url:'',notes:'Seams need resealing.'},
-      {gear_id:'GEAR-003',name:'Salomon Shift Pro 130 AT',brand:'Salomon',category:'Skiing',type:'Footwear',subtype:'Boot',model:'Shift Pro 130',date_purchased:'2020-11-01',price:699,weight_g:1980,size_color:'27.5',serial_cert:'',status:'lent',photo_url:'',notes:'AT bindings compatible.'},
-      {gear_id:'GEAR-004',name:'Petzl Grigri+',brand:'Petzl',category:'Mountaineering',type:'Belay',subtype:'Belay Device',model:'Grigri+',date_purchased:'2023-01-20',price:110,weight_g:175,size_color:'',serial_cert:'CE EN15151',status:'active',photo_url:'',notes:''},
-      {gear_id:'GEAR-005',name:'Osprey Mutant 38',brand:'Osprey',category:'Mountaineering',type:'Carry',subtype:'Pack / Rucksack',model:'Mutant 38',date_purchased:'2021-03-05',price:220,weight_g:1150,size_color:'S/M',serial_cert:'',status:'active',photo_url:'',notes:''},
-      {gear_id:'GEAR-006',name:'MSR PocketRocket 2',brand:'MSR',category:'Camping',type:'Cooking',subtype:'Stove',model:'PocketRocket 2',date_purchased:'2022-08-18',price:55,weight_g:73,size_color:'',serial_cert:'',status:'active',photo_url:'',notes:''},
-      {gear_id:'GEAR-007',name:'Salomon S/Pro 120',brand:'Salomon',category:'Skiing',type:'Footwear',subtype:'Boot',model:'S/Pro 120',date_purchased:'2023-10-12',price:549,weight_g:1800,size_color:'28.5',serial_cert:'',status:'active',photo_url:'',notes:''},
-      {gear_id:'GEAR-008',name:'Black Diamond Raven Ice Axe',brand:'Black Diamond',category:'Mountaineering',type:'Protection',subtype:'Ice Axe',model:'Raven',date_purchased:'2020-02-14',price:75,weight_g:385,size_color:'60cm',serial_cert:'CE EN13089',status:'active',photo_url:'',notes:''},
-      {gear_id:'GEAR-009',name:'Mammut Barryvox S',brand:'Mammut',category:'Skiing',type:'Safety',subtype:'Avalanche Beacon',model:'Barryvox S',date_purchased:'2022-11-20',price:380,weight_g:255,size_color:'',serial_cert:'',status:'active',photo_url:'',notes:''},
-      {gear_id:'GEAR-010',name:'Therm-a-Rest NeoAir XLite',brand:'Osprey',category:'Camping',type:'Sleep',subtype:'Sleeping Pad',model:'NeoAir XLite',date_purchased:'2019-07-01',price:199,weight_g:340,size_color:'R',serial_cert:'',status:'retired',photo_url:'',notes:'Punctured beyond repair.'},
+      {gear_id:'GEAR-001',name:'Black Diamond Half Dome',brand:'Black Diamond',category:'Helmets',type:'Climbing Helmets',subtype:'',model:'Half Dome',date_purchased:'2022-04-10',price:89,weight_g:395,size_color:'M/L',serial_cert:'CE EN12492',status:'active',photo_url:'',notes:'Minor scuff right side.',tags:['rock-climbing','mountaineering']},
+      {gear_id:'GEAR-002',name:'MSR Hubba Hubba NX2',brand:'MSR',category:'Camping',type:'Shelters',subtype:'Tents',model:'Hubba Hubba NX',date_purchased:'2021-06-15',price:450,weight_g:1720,size_color:'2P',serial_cert:'',status:'active',photo_url:'',notes:'Seams need resealing.',tags:['camping','hiking']},
+      {gear_id:'GEAR-003',name:'Salomon Shift Pro 130 AT',brand:'Salomon',category:'Footwear',type:'Snowboard Hardboots',subtype:'',model:'Shift Pro 130',date_purchased:'2020-11-01',price:699,weight_g:1980,size_color:'27.5',serial_cert:'',status:'lent',photo_url:'',notes:'AT bindings compatible.',tags:['ski-touring']},
+      {gear_id:'GEAR-004',name:'Petzl Grigri+',brand:'Petzl',category:'Mountaineering & Climbing',type:'Belay & Descend',subtype:'Assisted-Braking',model:'Grigri+',date_purchased:'2023-01-20',price:110,weight_g:175,size_color:'',serial_cert:'CE EN15151',status:'active',photo_url:'',notes:'',tags:['rock-climbing']},
+      {gear_id:'GEAR-005',name:'Osprey Mutant 38',brand:'Osprey',category:'Carry',type:'Backpacks',subtype:'Climbing Packs',model:'Mutant 38',date_purchased:'2021-03-05',price:220,weight_g:1150,size_color:'S/M',serial_cert:'',status:'active',photo_url:'',notes:'',tags:['mountaineering','rock-climbing']},
+      {gear_id:'GEAR-006',name:'MSR PocketRocket 2',brand:'MSR',category:'Camping',type:'Camp Kitchen',subtype:'Stoves',model:'PocketRocket 2',date_purchased:'2022-08-18',price:55,weight_g:73,size_color:'',serial_cert:'',status:'active',photo_url:'',notes:'',tags:['camping','hiking']},
+      {gear_id:'GEAR-007',name:'Salomon S/Pro 120',brand:'Salomon',category:'Footwear',type:'Snowboard Hardboots',subtype:'',model:'S/Pro 120',date_purchased:'2023-10-12',price:549,weight_g:1800,size_color:'28.5',serial_cert:'',status:'active',photo_url:'',notes:'',tags:['ski-touring']},
+      {gear_id:'GEAR-008',name:'Black Diamond Raven Ice Axe',brand:'Black Diamond',category:'Mountaineering & Climbing',type:'Ice Axes',subtype:'Walking Ice Axes',model:'Raven',date_purchased:'2020-02-14',price:75,weight_g:385,size_color:'60cm',serial_cert:'CE EN13089',status:'active',photo_url:'',notes:'',tags:['mountaineering']},
+      {gear_id:'GEAR-009',name:'Mammut Barryvox S',brand:'Mammut',category:'Electronics',type:'GPS',subtype:'',model:'Barryvox S',date_purchased:'2022-11-20',price:380,weight_g:255,size_color:'',serial_cert:'',status:'active',photo_url:'',notes:'',tags:['ski-touring']},
+      {gear_id:'GEAR-010',name:'Therm-a-Rest NeoAir XLite',brand:'Osprey',category:'Camping',type:'Sleeping Systems',subtype:'Sleeping Pads',model:'NeoAir XLite',date_purchased:'2019-07-01',price:199,weight_g:340,size_color:'R',serial_cert:'',status:'retired',photo_url:'',notes:'Punctured beyond repair.',tags:['camping','hiking']},
     ];
     lends=[{lend_id:'LEND-001',gear_id:'GEAR-003',gear_name:'Salomon Shift Pro 130 AT',lent_to:'Marek K.',date_lent:'2026-02-01',date_due:'2026-03-15',date_returned:'',condition_on_return:'',notes:''}];
     saveLocal();
@@ -1256,8 +1292,8 @@ async function firestoreApi(action,body){
       await trips().doc(body.trip_id).delete(); return{deleted:body.trip_id};
     // ── LOOKUPS ──
     case 'getLookups':{
-      const[bSnap,hSnap]=await Promise.all([meta('brands').get(),meta('hierarchy').get()]);
-      return{brands:bSnap.exists?(bSnap.data().items||[]):[],hierarchy:hSnap.exists?hSnap.data():{}};
+      const[bSnap,hSnap,tSnap]=await Promise.all([meta('brands').get(),meta('hierarchy').get(),meta('tags').get()]);
+      return{brands:bSnap.exists?(bSnap.data().items||[]):[],hierarchy:hSnap.exists?hSnap.data():{},tags:tSnap.exists?(tSnap.data().items||[]):["mountaineering","rock-climbing","ski-touring","snowboarding","cross-country","camping","hiking","via-ferrata"]};
     }
     case 'addBrand':
       await meta('brands').update({items:FieldValue.arrayUnion(body.brand)});
@@ -1288,6 +1324,16 @@ async function firestoreApi(action,body){
       await meta('brands').update({items:FieldValue.arrayRemove(body.oldName)});
       await meta('brands').update({items:FieldValue.arrayUnion(body.newName)});
       return{renamed:body};
+    case 'addTag':
+      await meta('tags').set({items:FieldValue.arrayUnion(body.tag)},{merge:true});
+      return{added_tag:body.tag};
+    case 'removeTag':
+      await meta('tags').set({items:FieldValue.arrayRemove(body.tag)},{merge:true});
+      return{removed_tag:body.tag};
+    case 'renameTag':
+      await meta('tags').set({items:FieldValue.arrayRemove(body.oldName)},{merge:true});
+      await meta('tags').set({items:FieldValue.arrayUnion(body.newName)},{merge:true});
+      return{renamed:body};
     case 'renameType':{
       const h=await meta('hierarchy').get(); const d=h.exists?h.data():{};
       if(d[body.category]){d[body.category][body.newName]=d[body.category][body.oldName];delete d[body.category][body.oldName];}
@@ -1309,7 +1355,52 @@ async function firestoreApi(action,body){
 }
 function normalizeItem(i){
   ['date_purchased','date_produced'].forEach(f=>{if(i[f]) i[f]=fmtDate(i[f]);});
+  if(!i.tags) i.tags=[];
   return i;
+}
+function migrateHierarchy(){
+  // Map old category/type values to new hierarchy; items with unrecognised values are left untouched
+  const CAT_MAP={'Mountaineering':'Mountaineering & Climbing','Skiing':'Skiing & Snowboarding'};
+  // type migrations: keyed by [oldCategory, oldType] → {category, type}
+  const TYPE_MAP={
+    'Mountaineering|Belay':{category:'Mountaineering & Climbing',type:'Belay & Descend'},
+    'Mountaineering|Footwear':{category:'Footwear',type:''},
+    'Mountaineering|Navigation':{category:'Electronics',type:'GPS'},
+    'Mountaineering|Carry':{category:'Carry',type:'Backpacks'},
+    'Mountaineering|Apparel':{category:'Apparel',type:''},
+    'Camping|Shelter':{category:'Camping',type:'Shelters'},
+    'Camping|Sleep':{category:'Camping',type:'Sleeping Systems'},
+    'Camping|Cooking':{category:'Camping',type:'Camp Kitchen'},
+    'Camping|Carry':{category:'Carry',type:'Backpacks'},
+    'Camping|Lighting':{category:'Lighting',type:''},
+    'Skiing|Footwear':{category:'Footwear',type:''},
+    'Skiing|Safety':{category:'Skiing & Snowboarding',type:''},
+    'Skiing|Apparel':{category:'Apparel',type:''},
+    'Skiing|Carry':{category:'Carry',type:'Backpacks'},
+  };
+  let changed=false;
+  items.forEach(item=>{
+    const typeKey=(item.category||'')+'|'+(item.type||'');
+    if(TYPE_MAP[typeKey]){
+      const m=TYPE_MAP[typeKey];
+      item.category=m.category;
+      item.type=m.type;
+      item.subtype='';
+      changed=true;
+    } else if(CAT_MAP[item.category]){
+      item.category=CAT_MAP[item.category];
+      changed=true;
+    }
+    if(!item.tags) item.tags=[];
+  });
+  if(changed){
+    saveLocal();
+    // Push migrated items to Firebase in background
+    if(getApiUrl()){
+      const migrated=items.filter(i=>['Mountaineering & Climbing','Skiing & Snowboarding','Camping','Footwear','Electronics','Carry','Apparel','Lighting'].includes(i.category));
+      migrated.forEach(item=>api('updateGear',{gear_id:item.gear_id,category:item.category,type:item.type,subtype:item.subtype,tags:item.tags}).catch(()=>{}));
+    }
+  }
 }
 function normalizeLend(l){
   ['date_lent','date_due','date_returned'].forEach(f=>{if(l[f]) l[f]=fmtDate(l[f]);});
@@ -1338,9 +1429,11 @@ async function connectAndLoad({force=false}={}){
       api('getLookups'),api('getGear'),api('getLends'),api('getTrips').catch(()=>[])
     ]);
     lookups=rawLookups;
+    if(!lookups.tags) lookups.tags=["mountaineering","rock-climbing","ski-touring","snowboarding","cross-country","camping","hiking","via-ferrata"];
     items=rawItems.map(normalizeItem);
     lends=rawLends.map(normalizeLend);
     trips=rawTrips.map(normalizeTrip);
+    migrateHierarchy();
     saveLocal();
     setConnStatus('connected','Firebase — '+items.length+' items');
     updateBadges(); renderAll(); renderLookupUI();
@@ -1427,13 +1520,15 @@ function getFiltered(){
   const brand=document.getElementById('filterBrand')?.value||'';
   const prodYear=document.getElementById('fProdYear')?.value||'';
   const st=document.getElementById('fSt')?.value||'';
-  const activeCount=[cat,typ,sub,brand,prodYear,st].filter(Boolean).length;
+  const tagFilter=document.getElementById('filterTag')?.value||'';
+  const activeCount=[cat,typ,sub,brand,prodYear,st,tagFilter].filter(Boolean).length;
   const cb=document.getElementById('clearFiltersBtn');
   if(cb) cb.style.display=activeCount?'':'none';
   const fc=document.getElementById('filterCount');
   if(fc){fc.textContent=activeCount;fc.style.display=activeCount?'':'none';}
   return items.filter(i=>{
-    if(s&&!`${i.name} ${i.brand} ${i.type} ${i.subtype} ${i.model}`.toLowerCase().includes(s)) return false;
+    if(s&&!`${i.name} ${i.brand} ${i.type} ${i.subtype} ${i.model} ${(i.tags||[]).join(' ')}`.toLowerCase().includes(s)) return false;
+    if(tagFilter&&!(i.tags||[]).includes(tagFilter)) return false;
     if(cat&&i.category.toLowerCase()!==cat.toLowerCase()) return false;
     if(typ&&(i.type||'')!==typ) return false;
     if(sub&&(i.subtype||'')!==sub) return false;
@@ -1520,7 +1615,7 @@ function runGlobalSearch(){
   res.innerHTML=html;
 }
 function clearFilters(){
-  ['fCat','filterType','filterSubtype','filterBrand','fProdYear','fSt'].forEach(id=>{
+  ['fCat','filterType','filterSubtype','filterBrand','fProdYear','fSt','filterTag'].forEach(id=>{
     const el=document.getElementById(id); if(el) el.value='';
   });
   document.getElementById('searchInput').value='';
@@ -1554,6 +1649,12 @@ function populateFilterDropdowns(){
   else if(cat){subs=[...new Set(items.filter(i=>i.category===cat).map(i=>i.subtype).filter(Boolean))].sort();}
   else{subs=[...new Set(items.map(i=>i.subtype).filter(Boolean))].sort();}
   subs.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;if(s===curSub)o.selected=true;fs.appendChild(o);});
+  const ftag=document.getElementById('filterTag');
+  if(ftag){
+    const curTag=ftag.value;
+    ftag.innerHTML='<option value="">All Tags</option>';
+    (lookups.tags||[]).sort().forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;if(t===curTag)o.selected=true;ftag.appendChild(o);});
+  }
 }
 function currentLend(gear_id){return lends.find(l=>l.gear_id===gear_id&&!l.date_returned);}
 
@@ -1573,6 +1674,7 @@ function cardHTML(item){
       ${item.status==='lent'?'<span class="tag tag-lent">Lent</span>':''}
       ${item.status==='retired'?'<span class="tag tag-retired">Retired</span>':''}
       ${activeTrip(item.gear_id)?'<span class="tag tag-in_trip">In Trip</span>':''}
+      ${(item.tags||[]).map(t=>`<span class="tag tag-user-tag">${esc(t)}</span>`).join('')}
     </div>
     <div class="card-name">${esc(item.name)}</div>
     <div class="card-brand">${esc(item.brand)}${item.model?' · '+esc(item.model):''}</div>
@@ -1604,6 +1706,7 @@ function tableRowHTML(item,cols){
     category:`<td><span class="tag" style="${getCatTagStyle(item.category)}">${item.category}</span></td>`,
     type:`<td>${esc(item.type)||'—'}</td>`,
     subtype:`<td>${esc(item.subtype)||'—'}</td>`,
+    tags:`<td>${(item.tags||[]).length?(item.tags||[]).map(t=>`<span class="tag tag-user-tag">${esc(t)}</span>`).join(' '):'—'}</td>`,
     weight_g:`<td style="color:var(--muted)">${item.weight_g?fmtWeight(parseFloat(item.weight_g)):'—'}</td>`,
     date_purchased:`<td>${item.date_purchased||'—'}</td>`,
     date_produced:`<td>${item.date_produced||'—'}</td>`,
@@ -1706,7 +1809,7 @@ function renderAll(){
   document.getElementById('allCard').style.display=isc?'':'none';
   document.getElementById('allTable').style.display=isc?'none':'';
   if(isc) document.getElementById('allCard').innerHTML=filtered.length?filtered.map(cardHTML).join(''):emptyHTML('🏔','No gear found','Add your first item or adjust filters');
-  else document.getElementById('allTbody').innerHTML=filtered.length?groupItems(filtered).map(g=>tableRowGroupedHTML(g,['photo','name','brand','category','type','subtype','weight_g','date_purchased','date_produced','status','actions'])).join(''):emptyRow(10,'No items');
+  else document.getElementById('allTbody').innerHTML=filtered.length?groupItems(filtered).map(g=>tableRowGroupedHTML(g,['photo','name','brand','category','type','subtype','tags','weight_g','date_purchased','date_produced','status','actions'])).join(''):emptyRow(11,'No items');
 
   const ret=applySorted(items.filter(i=>i.status==='retired'));
   document.getElementById('retiredCard').style.display=isc?'':'none';
@@ -1891,6 +1994,7 @@ function openTripDetail(id){
   currentTripId=id;
   document.getElementById('trips-list-view').style.display='none';
   document.getElementById('trips-detail-view').style.display='';
+  const fab=document.getElementById('fab');if(fab)fab.style.display='none';
   renderTripDetail(id);
 }
 function renderTripDetail(id){
@@ -2008,6 +2112,7 @@ function backToTrips(){
   currentTripId=null;
   document.getElementById('trips-detail-view').style.display='none';
   document.getElementById('trips-list-view').style.display='';
+  const fab=document.getElementById('fab');if(fab&&window.innerWidth<=720)fab.style.display='flex';
   renderTrips();
 }
 function openAddTrip(){
@@ -2464,7 +2569,7 @@ function clearForm(){
   document.getElementById('fType').innerHTML='<option value="">— select category first —</option>'; document.getElementById('fType').disabled=true;
   document.getElementById('fSubtype').innerHTML='<option value="">— select type first —</option>'; document.getElementById('fSubtype').disabled=true;
 }
-function openAddModal(){editingId=null;clearForm();document.getElementById('mTitle').textContent='Add Gear';document.getElementById('addOverlay').classList.add('open');}
+function openAddModal(){editingId=null;clearForm();renderTagsSelect([]);document.getElementById('mTitle').textContent='Add Gear';document.getElementById('addOverlay').classList.add('open');}
 function openEdit(id){
   const item=items.find(i=>i.gear_id===id); if(!item) return;
   editingId=id; document.getElementById('mTitle').textContent='Edit Gear';
@@ -2492,6 +2597,7 @@ function openEdit(id){
   // Populate custom fields
   document.getElementById('fCustomFields').innerHTML='';
   (item.custom_fields||[]).forEach(f=>addCustomField(f.label,f.value));
+  renderTagsSelect(item.tags||[]);
   closeModal('detailOverlay'); document.getElementById('addOverlay').classList.add('open');
 }
 async function saveItem(){
@@ -2504,7 +2610,7 @@ async function saveItem(){
     price:document.getElementById('fPrice').value,weight_g:document.getElementById('fWeight').value,
     serial_cert:document.getElementById('fSerial').value.trim(),
     photo_url:document.getElementById('fPhotoUrl').value.trim(),
-    custom_fields:getCustomFields()};
+    custom_fields:getCustomFields(),tags:getSelectedTags()};
   let _saveNotes=document.getElementById('fNotes').value.trim();
   const _saveStatus=document.getElementById('fStatus').value;
   body.status=_saveStatus;
@@ -2547,6 +2653,7 @@ function duplicateItem(id){
   document.getElementById('fPhotoUrl').value=src.photo_url||'';
   document.getElementById('lentFields').style.display='none';
   setFormSelects(src);
+  renderTagsSelect(src.tags||[]);
   document.getElementById('addOverlay').classList.add('open');
   // Focus production date field since that's usually the only thing that differs
   setTimeout(()=>{
@@ -2740,6 +2847,21 @@ function getCustomFields(){
     value:row.querySelector('.cf-value').value.trim()
   })).filter(f=>f.label||f.value);
 }
+function renderTagsSelect(selectedTags){
+  const container=document.getElementById('fTagsContainer');
+  if(!container) return;
+  const tags=lookups.tags||[];
+  if(!tags.length){container.innerHTML='<span style="font-size:12px;color:var(--muted)">No tags defined. Add tags in Settings.</span>';return;}
+  container.innerHTML=tags.map(t=>{
+    const checked=(selectedTags||[]).includes(t);
+    return`<label class="tag-pill${checked?' selected':''}" onclick="this.classList.toggle('selected');this.querySelector('input').checked=!this.querySelector('input').checked">
+      <input type="checkbox" style="display:none" value="${esc(t)}"${checked?' checked':''}>${esc(t)}
+    </label>`;
+  }).join('');
+}
+function getSelectedTags(){
+  return [...document.querySelectorAll('#fTagsContainer .tag-pill.selected input')].map(i=>i.value);
+}
 
 // ════ RETURN ════
 function openReturn(gear_id){
@@ -2852,7 +2974,8 @@ function openDetail(id){
   const slogExpanded=curSection==='inspection';
   const logHtml=`<div style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px"><div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none';this.querySelector('.slog-chev').style.transform=this.nextElementSibling.style.display===''?'rotate(180deg)':'rotate(0deg)'"><div style="font-weight:700;font-size:13px">Service Log${log.length?` <span style="font-size:11px;font-weight:400;color:var(--muted)">(${log.length})</span>`:''}</div><svg class="slog-chev" width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="transition:transform .2s;transform:${slogExpanded?'rotate(180deg)':'rotate(0deg)'}"><polyline points="4,7 10,13 16,7"/></svg></div><div style="display:${slogExpanded?'':'none'};margin-top:8px">${log.length?log.map(e=>`<div class="slog-entry"><span class="slog-date">${esc(e.date)}</span><span class="slog-type">${esc(e.type)}</span><div style="margin-top:3px">${esc(e.note)}</div></div>`).join(''):'<div style="color:var(--muted);font-size:13px">No entries yet.</div>'}<div class="slog-add"><input type="date" class="fc" id="slogDate" value="${new Date().toISOString().slice(0,10)}" style="font-size:12px"><select class="fc" id="slogType" style="font-size:12px"><option>Inspection</option><option>Fall/Impact</option><option>Service</option><option>Repair</option><option>Note</option></select><input type="text" class="fc" id="slogNote" placeholder="Entry note…" style="grid-column:1/-1;font-size:12px"><button class="btn btn-primary btn-sm" onclick="addServiceLogEntry('${esc(item.gear_id)}')" style="grid-column:1/-1">Add Entry</button></div></div></div>`;
   const displayNotes=item.notes?item.notes.replace(/^\[Retired:[^\]]*\]\s*/,''):'';
-  document.getElementById('detailContent').innerHTML=`<div class="detail-header">${photo}<div><div class="detail-name">${esc(item.name)}</div><div class="detail-brand">${esc(item.brand)}${item.model?' — '+esc(item.model):''}</div><div class="card-badges"><span class="tag" style="${getCatTagStyle(item.category)}">${item.category}</span>${item.type?`<span class="tag tag-muted">${item.type}</span>`:''}${item.subtype?`<span class="tag tag-muted">${item.subtype}</span>`:''}${item.status==='lent'?'<span class="tag tag-lent">Lent Out</span>':''}${retireTag}</div></div></div>${lentBox}<div class="detail-grid">${fields.map(([l,v])=>{const c=DF_COLORS[l];const s=c?`style="--df-bg:${c[0]};--df-border:${c[1]}"`:'';return`<div ${s}><div class="dfl">${l}</div><div class="dfv">${esc(v)}</div></div>`;}).join('')}</div>${displayNotes?`<div class="dfl" style="margin-bottom:6px">Notes</div><div class="notes-box">${esc(displayNotes)}</div>`:''}${logHtml}`;
+  const tagsHtml=(item.tags||[]).length?`<div style="margin-top:10px">${(item.tags||[]).map(t=>`<span class="tag tag-user-tag">${esc(t)}</span>`).join(' ')}</div>`:'';
+  document.getElementById('detailContent').innerHTML=`<div class="detail-header">${photo}<div><div class="detail-name">${esc(item.name)}</div><div class="detail-brand">${esc(item.brand)}${item.model?' — '+esc(item.model):''}</div><div class="card-badges"><span class="tag" style="${getCatTagStyle(item.category)}">${item.category}</span>${item.type?`<span class="tag tag-muted">${item.type}</span>`:''}${item.subtype?`<span class="tag tag-muted">${item.subtype}</span>`:''}${item.status==='lent'?'<span class="tag tag-lent">Lent Out</span>':''}${retireTag}</div></div></div>${lentBox}<div class="detail-grid">${fields.map(([l,v])=>{const c=DF_COLORS[l];const s=c?`style="--df-bg:${c[0]};--df-border:${c[1]}"`:'';return`<div ${s}><div class="dfl">${l}</div><div class="dfv">${esc(v)}</div></div>`;}).join('')}</div>${tagsHtml}${displayNotes?`<div class="dfl" style="margin-top:10px;margin-bottom:6px">Notes</div><div class="notes-box">${esc(displayNotes)}</div>`:''}${logHtml}`;
   document.getElementById('detailActions').innerHTML=`<button class="btn btn-danger" onclick="deleteItem('${item.gear_id}')">${IC.trash} Delete</button>${item.status==='lent'?`<button class="btn btn-warn" onclick="openReturn('${item.gear_id}')">${IC.ret} Mark Returned</button>`:''}${item.status==='active'?`<button class="btn btn-warn" onclick="closeModal('detailOverlay');quickLend('${item.gear_id}')">${IC.lend} Lend</button>`:''}<button class="btn btn-ghost" onclick="closeModal('detailOverlay');duplicateItem('${item.gear_id}')">${IC.copy} Duplicate</button><button class="btn btn-ghost" onclick="closeModal('detailOverlay')">Close</button><button class="btn btn-primary" onclick="openEdit('${item.gear_id}')">${IC.pencil} Edit</button>`;
   document.getElementById('detailOverlay').classList.add('open');
 }
@@ -3313,6 +3436,20 @@ function renderLookupUI(){
         <button class="btn btn-ghost btn-sm edit-show" onclick="removeBrand('${esc(b)}')"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><line x1="4" y1="4" x2="16" y2="16"/><line x1="16" y1="4" x2="4" y2="16"/></svg></button>
       </div>
     </div>`).join('');
+  const tl=document.getElementById('tagList');
+  if(tl) tl.innerHTML=(lookups.tags||[]).map(t=>{
+    const eid='tag-edit-'+CSS.escape(t);
+    const lid='tag-li-'+CSS.escape(t);
+    return`<div class="list-item" id="${lid}">
+      <span class="list-item-label">${esc(t)}</span>
+      <input class="fc list-item-edit" id="${eid}" value="${esc(t)}" style="font-size:13px;padding:4px 8px">
+      <div class="list-item-btns">
+        <button class="btn btn-ghost btn-sm edit-show" onclick="startEditTag('${esc(t)}')"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3l4 4-9 9H4v-4l9-9z"/></svg></button>
+        <button class="btn btn-primary btn-sm edit-save" style="display:none" onclick="saveEditTag('${esc(t)}')"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,10 8,15 17,5"/></svg></button>
+        <button class="btn btn-ghost btn-sm edit-cancel" style="display:none" onclick="cancelEdit('${lid}')"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><line x1="4" y1="4" x2="16" y2="16"/><line x1="16" y1="4" x2="4" y2="16"/></svg></button>
+        <button class="btn btn-ghost btn-sm edit-show" onclick="removeTag('${esc(t)}')"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><line x1="4" y1="4" x2="16" y2="16"/><line x1="16" y1="4" x2="4" y2="16"/></svg></button>
+      </div>
+    </div>`;}).join('');
   renderHierTree();
 }
 function getCats(){return Object.keys(lookups.hierarchy||{}).sort();}
@@ -3343,6 +3480,41 @@ async function addBrand(){
   lookups.brands.push(v);lookups.brands.sort();saveLocal();document.getElementById('newBrand').value='';renderLookupUI();toast('Brand added');
 }
 function removeBrand(b){lookups.brands=lookups.brands.filter(x=>x!==b);saveLocal();renderLookupUI();}
+function startEditTag(tag){startEdit('tag-li-'+CSS.escape(tag));}
+async function saveEditTag(oldTag){
+  const el=document.getElementById('tag-edit-'+CSS.escape(oldTag));
+  const newTag=(el?el.value:'').trim().toLowerCase().replace(/\s+/g,'-');
+  if(!newTag||newTag===oldTag){cancelEdit('tag-li-'+CSS.escape(oldTag));return;}
+  if((lookups.tags||[]).includes(newTag)){toast('Tag already exists');return;}
+  const idx=(lookups.tags||[]).indexOf(oldTag);
+  if(idx>=0) lookups.tags[idx]=newTag;
+  lookups.tags.sort();
+  items.forEach(i=>{if(i.tags){const ti=i.tags.indexOf(oldTag);if(ti>=0) i.tags[ti]=newTag;}});
+  try{if(getApiUrl()){
+    await api('renameTag',{oldName:oldTag,newName:newTag});
+    const affected=items.filter(i=>(i.tags||[]).includes(newTag));
+    for(const it of affected) await api('updateGear',{gear_id:it.gear_id,tags:it.tags}).catch(()=>{});
+  }}catch(e){toast('API: '+e.message);}
+  saveLocal();renderLookupUI();renderAll();toast(`Tag renamed to "${newTag}"`);
+}
+async function addTag(){
+  const v=(document.getElementById('newTag').value.trim()).toLowerCase().replace(/\s+/g,'-'); if(!v) return;
+  if((lookups.tags||[]).includes(v)){toast('Tag already exists');return;}
+  if(!lookups.tags) lookups.tags=[];
+  try{if(getApiUrl()) await api('addTag',{tag:v});}catch(e){toast('API: '+e.message);}
+  lookups.tags.push(v);lookups.tags.sort();saveLocal();document.getElementById('newTag').value='';renderLookupUI();toast('Tag added');
+}
+function removeTag(t){
+  if(!confirm('Remove tag "'+t+'"? It will be removed from all items.')) return;
+  lookups.tags=(lookups.tags||[]).filter(x=>x!==t);
+  items.forEach(i=>{if(i.tags) i.tags=i.tags.filter(x=>x!==t);});
+  if(getApiUrl()){
+    api('removeTag',{tag:t}).catch(()=>{});
+    const affected=items.filter(()=>true);
+    affected.forEach(it=>api('updateGear',{gear_id:it.gear_id,tags:it.tags}).catch(()=>{}));
+  }
+  saveLocal();renderLookupUI();renderAll();toast('Tag removed');
+}
 function removeType(cat,typ){
   if(!confirm(`Remove type "${typ}" from ${cat}?`)) return;
   delete lookups.hierarchy[cat][typ]; _hierOpen.types.delete(cat+'\0'+typ); saveLocal(); renderLookupUI();
